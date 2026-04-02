@@ -24,7 +24,7 @@
 *   **OpenClaw Gateway:** Hub กลางในการเชื่อมต่อ Agent, UI Town, Discord, และ Telegram
 *   **UI Town (Agent Town):** แพลตฟอร์ม UI สำหรับ Agent ในการทำงานร่วมกันและบอสใช้ติดตามสถานะ
 *   **Discord Server:** ช่องทางการสื่อสารหลักระหว่าง Agent และการแจ้งเตือนต่างๆ
-*   **Antigravity Proxy:** ระบบจัดการการเข้าถึง LLM พร้อมกลไก Account Rotation และ Load Balancing
+*   **Antigravity Proxy (BCProxyAI):** ระบบจัดการการเข้าถึง LLM พร้อมกลไก Account Rotation, Load Balancing และ Multi-provider Fallback
 *   **Persistent Agent Layer:** ชั้นการทำงานสำหรับ Agent ถาวร พร้อม Agent Process Manager และ Memory/State Management
 *   **Spawn Manager:** ระบบจัดการการสร้างและยุติ Spawn-on-Demand Workers ตาม Task
 *   **Memory System:** ประกอบด้วย Short-term Memory (Redis), Long-term Memory (Vector DB), และ Shared Memory (Redis)
@@ -45,9 +45,9 @@
 
 ### 5. Roadmap การพัฒนา
 
-*   **Phase 1: Core Infrastructure & Persistent Agent Layer:** สร้างรากฐานระบบและ Persistent Agent
-*   **Phase 2: Hybrid Agent System & Advanced Features:** ระบบ Hybrid Agent, Task Planning, และ Shared Memory
-*   **Phase 3: Optimization, Security & Production Readiness:** ระบบ Monitoring, Security Middleware, Resilience (Circuit Breaker/Retry), และ Error Handling
+*   **Phase 1: Core Infrastructure & Persistent Agent Layer:** สร้างรากฐานระบบและ Persistent Agent - **COMPLETED**
+*   **Phase 2: Hybrid Agent System & Advanced Features:** ระบบ Hybrid Agent, Task Planning, และ Shared Memory - **COMPLETED**
+*   **Phase 3: Optimization, Security & Production Readiness:** ระบบ Monitoring, Security Middleware, Resilience (Circuit Breaker/Retry), และ Error Handling - **COMPLETED**
 
 ### 6. Security & Resilience (Phase 3 Features)
 
@@ -71,6 +71,7 @@
     ```bash
     cp docker/.env.example docker/.env
     ```
+    ดูรายละเอียดตัวแปรทั้งหมดได้ในส่วน [Environment Variables Reference](#environment-variables-reference)
 
 3.  **รันระบบด้วย Docker Compose:**
     ```bash
@@ -86,25 +87,40 @@
 
 ### Services และ Ports
 
-| Service Name               | Port | Description                                     |
-| :------------------------- | :--- | :---------------------------------------------- |
-| `agent-town`               | 3000 | UI สำหรับ Agent Town                             |
-| `memory-system`            | 3001 | บริการจัดการ Memory (Short/Long/Shared)          |
-| `persistent-agent-layer`   | 3002 | บริการจัดการ Persistent Agent                    |
-| `spawn-manager`            | 3003 | บริการจัดการ Spawn-on-Demand Agent               |
-| `ceo-agent`                | 3004 | บริการหลักของ CEO Agent (Planner/Tracker)        |
-| `translation-layer`        | 3005 | บริการแปลภาษา                                   |
-| `account-manager`          | 3006 | บริการจัดการ LLM Account Rotation                |
-| `spawn-agents`             | 3007 | Template สำหรับ Spawned Agents                   |
-| `monitoring`               | 3008 | Monitoring Dashboard & Alerting                  |
-| `antigravity-proxy`        | 8080 | Proxy สำหรับการเข้าถึง LLM                       |
-| `openclaw`                 | 18789| Gateway สำหรับการสื่อสารภายในระบบ                |
+| Service Name               | Port | Description                                                              |
+| :------------------------- | :--- | :----------------------------------------------------------------------- |
+| `agent-town`               | 3000 | UI สำหรับ Agent Town                                                      |
+| `memory-system`            | 3001 | บริการจัดการ Memory (Short/Long/Shared)                                  |
+| `persistent-agent-layer`   | 3002 | บริการจัดการ Persistent Agent                                            |
+| `spawn-manager`            | 3003 | บริการจัดการ Spawn-on-Demand Agent                                       |
+| `ceo-agent`                | 3004 | บริการหลักของ CEO Agent (Planner/Tracker/Trend Research)                 |
+| `translation-layer`        | 3005 | บริการแปลภาษา                                                            |
+| `account-manager`          | 3006 | บริการจัดการ LLM Account Rotation                                        |
+| `spawn-agents`             | 3007 | Template สำหรับ Spawned Agents (Developer, Researcher, Designer, etc.)    |
+| `monitoring`               | 3008 | Monitoring Dashboard & Alerting                                          |
+| `accountant-agent`         | 3009 | Persistent Agent: เฝ้าระวังธุรกรรมการเงิน                                |
+| `cto-agent`                | 3010 | Persistent Agent: ดูแลความเสถียรของระบบและ Error Logs                    |
+| `cmo-agent`                | 3011 | Persistent Agent: จัดการแคมเปญการตลาดและงบประมาณ                         |
+| `cso-agent`                | 3012 | Persistent Agent: วางกลยุทธ์ธุรกิจและวิเคราะห์คู่แข่ง                    |
+| `devops-agent`             | 3013 | Persistent Agent: จัดการ Infrastructure และ CI/CD Pipelines              |
+| `antigravity-proxy`        | 8080 | Proxy สำหรับการเข้าถึง LLM พร้อม Fallback และ Load Balancing             |
+| `openclaw`                 | 18789| Gateway สำหรับการสื่อสารภายในระบบ                                        |
+| `redis`                    | 6379 | Redis Cache/DB สำหรับ Short-term Memory และ Shared Memory                |
+| `chromadb`                 | 8000 | Vector Database สำหรับ Long-term Memory                                   |
+| `ollama`                   | 11434| Local LLM Server (ใช้สำหรับ Translation Layer หรือ Antigravity Proxy)   |
 
 ### การตรวจสอบ Monitoring Dashboard
 
 คุณสามารถเข้าถึง Dashboard เพื่อดูสถานะของระบบและ Metrics ต่างๆ ได้ที่:
 `http://localhost:3008/dashboard`
 
+### Environment Variables Reference
+
+โปรดดูไฟล์ `docker/.env.example` สำหรับรายการ Environment Variables ทั้งหมดที่จำเป็นสำหรับการตั้งค่าระบบ พร้อมคำอธิบายและค่าตัวอย่าง
+
 ### เอกสารประกอบ
 
-รายละเอียดเพิ่มเติมสามารถดูได้จากเอกสารในโฟลเดอร์ `docs/`
+รายละเอียดเพิ่มเติมสามารถดูได้จากเอกสารในโฟลเดอร์ `docs/` และไฟล์ Markdown อื่นๆ ใน Project Root:
+*   `DEVELOPMENT_ROADMAP.md`
+*   `CHANGELOG.md`
+*   `SERVICES_MAP.md`
