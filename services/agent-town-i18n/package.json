@@ -1,0 +1,57 @@
+// package.json for agent-town-i18n utilities
+
+{
+  "name": "@agenticskill/agent-town-i18n",
+  "version": "1.0.0",
+  "description": "Complete Thai language support package for Agent Town",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc --declaration",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "agent-town",
+    "i18n",
+    "localization",
+    "thai",
+    "next-intl",
+    "agenticskill"
+  ],
+  "author": "mrdarkpromth50-dotcom",
+  "license": "MIT",
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "next-intl": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrdarkpromth50-dotcom/agenticskill.git",
+    "directory": "services/agent-town-i18n"
+  },
+  "bugs": {
+    "url": "https://github.com/mrdarkpromth50-dotcom/agenticskill/issues"
+  },
+  "homepage": "https://github.com/mrdarkpromth50-dotcom/agenticskill/tree/main/services/agent-town-i18n",
+  "exports": {
+    ".": "./index.ts",
+    "./config": "./config.ts",
+    "./utils/thai-formatter": "./utils/thai-formatter.ts",
+    "./utils/thai-keyboard": "./utils/thai-keyboard.ts",
+    "./utils/i18n-hook": "./utils/i18n-hook.ts",
+    "./locales/en": "./locales/en/messages.json",
+    "./locales/th": "./locales/th/messages.json"
+  }
+}

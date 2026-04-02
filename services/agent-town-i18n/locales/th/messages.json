@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "appTitle": "Agent Town",
+    "appDescription": "สำนักงานพิกเซลที่ AI agents ทำงานร่วมกันแบบเรียลไทม์"
+  },
+  "status": {
+    "offline": "ออนไลน์ไม่ได้",
+    "connecting": "กำลังเชื่อมต่อ",
+    "connected": "ออนไลน์",
+    "error": "ข้อผิดพลาด",
+    "disconnected": "ตัดการเชื่อมต่อ",
+    "reconnecting": "กำลังเชื่อมต่อใหม่"
+  },
+  "seatStatus": {
+    "empty": "ว่าง",
+    "returning": "กำลังกลับมา",
+    "running": "กำลังทำงาน",
+    "done": "เสร็จแล้ว",
+    "failed": "ล้มเหลว",
+    "idle": "ไม่มีกิจกรรม"
+  },
+  "taskStatus": {
+    "submitted": "ส่งแล้ว",
+    "queued": "รอคิว",
+    "running": "กำลังทำงาน",
+    "completed": "เสร็จสมบูรณ์",
+    "failed": "ล้มเหลว",
+    "cancelled": "ยกเลิก"
+  },
+  "ui": {
+    "buttons": {
+      "send": "ส่ง",
+      "stop": "หยุด",
+      "worker": "คนงาน",
+      "agent": "เอเจนต์",
+      "unassign": "เลิกมอบหมาย",
+      "save": "บันทึก",
+      "close": "ปิด",
+      "skip": "ข้าม",
+      "connect": "เชื่อมต่อ",
+      "disconnect": "ตัดการเชื่อมต่อ",
+      "reload": "โหลดใหม่",
+      "next": "ถัดไป",
+      "prev": "ก่อนหน้า",
+      "confirm": "ยืนยัน",
+      "cancel": "ยกเลิก"
+    },
+    "panels": {
+      "chat": "แชท",
+      "tasks": "งาน",
+      "workers": "คนงาน",
+      "connection": "การเชื่อมต่อ",
+      "settings": "ตั้งค่า",
+      "terminal": "เทอร์มินัล"
+    },
+    "placeholders": {
+      "messageInput": "พิมพ์ข้อความเพื่อมอบหมายงาน...",
+      "noConversation": "ยังไม่มีการสนทนา พิมพ์ข้อความเพื่อเริ่มต้น",
+      "noTasks": "ยังไม่มีงาน",
+      "noWorkers": "ยังไม่มีคนงานที่มอบหมาย",
+      "assignCrew": "มอบหมายคนงานให้กับที่นั่งนี้"
+    },
+    "labels": {
+      "workerName": "ชื่อคนงาน",
+      "workerType": "ประเภท",
+      "roleName": "บทบาท",
+      "status": "สถานะ",
+      "activity": "กิจกรรม",
+      "tasksActive": "งานที่ใช้งาน",
+      "taskHistory": "ประวัติ",
+      "gatewayUrl": "Gateway URL",
+      "gatewayStatus": "สถานะ",
+      "apiKey": "API Key"
+    }
+  },
+  "interactions": {
+    "pressE": "กดปุ่ม E เพื่อโต้ตอบ",
+    "clickToAssign": "คลิกเพื่อมอบหมายงาน",
+    "clickToCancel": "คลิกเพื่อยกเลิกงาน",
+    "doubleClickToRun": "ดับเบิลคลิกเพื่อเรียกใช้"
+  },
+  "poi": {
+    "water": [
+      "กำลังดื่มน้ำ...",
+      "อยู่ในสภาพเตี่ยวแล้ว!",
+      "เติมน้ำขวด~"
+    ],
+    "printer": [
+      "กำลังตรวจสอบการพิมพ์...",
+      "กำลังพิมพ์เอกสาร..."
+    ],
+    "trash": [
+      "กำลังทิ้งขยะ...",
+      "กำลังทำความสะอาด..."
+    ],
+    "exit": [
+      "ไปพักผ่อน...",
+      "ก้าวออกไป..."
+    ],
+    "meeting": [
+      "ในการประชุม...",
+      "กำลังอภิปรายโครงการ..."
+    ]
+  },
+  "activities": {
+    "sleeping": "นอนหลับ",
+    "stretching": "ยืดตัว",
+    "reading": "อ่านหนังสือ",
+    "coding": "เขียนโค้ด",
+    "thinking": "คิด",
+    "celebrating": "เฉลิมฉลอง"
+  },
+  "roles": {
+    "frontend": "วิศวกร Frontend",
+    "backend": "วิศวกร Backend",
+    "fullstack": "นักพัฒนา Full Stack",
+    "designer": "นักออกแบบ",
+    "pm": "ผู้จัดการโครงการ",
+    "qa": "วิศวกร QA",
+    "devops": "วิศวกร DevOps"
+  },
+  "times": {
+    "now": "เดี๋ยวนี้",
+    "minute": "นาทีที่แล้ว",
+    "minutes": "นาทีที่แล้ว",
+    "hour": "ชั่วโมงที่แล้ว",
+    "hours": "ชั่วโมงที่แล้ว",
+    "day": "วันที่แล้ว",
+    "days": "วันที่แล้ว"
+  },
+  "errors": {
+    "sceneCrashed": "ฉากขัดข้อง",
+    "connectionFailed": "การเชื่อมต่อล้มเหลว",
+    "invalidGateway": "Gateway URL ไม่ถูกต้อง",
+    "taskFailed": "งานล้มเหลว",
+    "genericError": "มีบางอย่างผิดพลาด"
+  },
+  "onboarding": {
+    "welcome": "ยินดีต้อนรับสู่ Agent Town!",
+    "step1Title": "พบทีมของคุณ",
+    "step1Desc": "สิ่งเหล่านี้คือคนงาน AI ของคุณ คลิกที่พวกเขาเพื่อโต้ตอบ",
+    "step2Title": "มอบหมายงาน",
+    "step2Desc": "พิมพ์งานในแผงแชทเพื่อมอบหมายงาน",
+    "step3Title": "ดูความคืบหน้า",
+    "step3Desc": "คนงานจะแสดงความคืบหน้าของพวกเขาด้วยตัวบ่งชี้ภาพ",
+    "step4Title": "คุณพร้อมแล้ว",
+    "step4Desc": "เริ่มต้นด้วยการพิมพ์ข้อความ!"
+  },
+  "shortcuts": {
+    "submit": "Enter เพื่อส่ง",
+    "escape": "ESC เพื่อปิด",
+    "interact": "ปุ่ม E เพื่อโต้ตอบ"
+  }
+}

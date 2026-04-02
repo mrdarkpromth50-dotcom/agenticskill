@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "appTitle": "Agent Town",
+    "appDescription": "A pixel office where AI agents work together in real time"
+  },
+  "status": {
+    "offline": "Offline",
+    "connecting": "Connecting",
+    "connected": "Online",
+    "error": "Error",
+    "disconnected": "Disconnected",
+    "reconnecting": "Reconnecting"
+  },
+  "seatStatus": {
+    "empty": "Empty",
+    "returning": "Returning",
+    "running": "Running",
+    "done": "Done",
+    "failed": "Failed",
+    "idle": "Idle"
+  },
+  "taskStatus": {
+    "submitted": "Submitted",
+    "queued": "Queued",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "ui": {
+    "buttons": {
+      "send": "Send",
+      "stop": "Stop",
+      "worker": "Worker",
+      "agent": "Agent",
+      "unassign": "Unassign",
+      "save": "Save",
+      "close": "Close",
+      "skip": "Skip",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "reload": "Reload Scene",
+      "next": "Next",
+      "prev": "Previous",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "panels": {
+      "chat": "Chat",
+      "tasks": "Tasks",
+      "workers": "Workers",
+      "connection": "Connection",
+      "settings": "Settings",
+      "terminal": "Terminal"
+    },
+    "placeholders": {
+      "messageInput": "Type a message to assign tasks...",
+      "noConversation": "No conversation yet. Type a message to begin.",
+      "noTasks": "No tasks yet.",
+      "noWorkers": "No workers assigned yet.",
+      "assignCrew": "Assign a crew member to this seat"
+    },
+    "labels": {
+      "workerName": "Worker Name",
+      "workerType": "Type",
+      "roleName": "Role",
+      "status": "Status",
+      "activity": "Activity",
+      "tasksActive": "Active Tasks",
+      "taskHistory": "History",
+      "gatewayUrl": "Gateway URL",
+      "gatewayStatus": "Status",
+      "apiKey": "API Key"
+    }
+  },
+  "interactions": {
+    "pressE": "Press E to interact",
+    "clickToAssign": "Click to assign task",
+    "clickToCancel": "Click to cancel task",
+    "doubleClickToRun": "Double-click to run"
+  },
+  "poi": {
+    "water": [
+      "Getting water...",
+      "Staying hydrated!",
+      "Refilling bottle~"
+    ],
+    "printer": [
+      "Checking prints...",
+      "Printing docs..."
+    ],
+    "trash": [
+      "Disposing trash...",
+      "Cleaning up..."
+    ],
+    "exit": [
+      "Going on break...",
+      "Stepping out..."
+    ],
+    "meeting": [
+      "In meeting...",
+      "Discussing project..."
+    ]
+  },
+  "activities": {
+    "sleeping": "Sleeping",
+    "stretching": "Stretching",
+    "reading": "Reading",
+    "coding": "Coding",
+    "thinking": "Thinking",
+    "celebrating": "Celebrating"
+  },
+  "roles": {
+    "frontend": "Frontend Engineer",
+    "backend": "Backend Engineer",
+    "fullstack": "Full Stack Developer",
+    "designer": "Designer",
+    "pm": "Project Manager",
+    "qa": "QA Engineer",
+    "devops": "DevOps Engineer"
+  },
+  "times": {
+    "now": "now",
+    "minute": "minute ago",
+    "minutes": "minutes ago",
+    "hour": "hour ago",
+    "hours": "hours ago",
+    "day": "day ago",
+    "days": "days ago"
+  },
+  "errors": {
+    "sceneCrashed": "Scene crashed",
+    "connectionFailed": "Connection failed",
+    "invalidGateway": "Invalid gateway URL",
+    "taskFailed": "Task failed",
+    "genericError": "Something went wrong"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Agent Town!",
+    "step1Title": "Meet Your Team",
+    "step1Desc": "These are your AI workers. Click on them to interact.",
+    "step2Title": "Assign Tasks",
+    "step2Desc": "Type a task in the chat panel to assign work.",
+    "step3Title": "Watch Progress",
+    "step3Desc": "Workers will show their progress with visual indicators.",
+    "step4Title": "You're Ready",
+    "step4Desc": "Start by typing a message!"
+  },
+  "shortcuts": {
+    "submit": "Enter to submit",
+    "escape": "ESC to close",
+    "interact": "E key to interact"
+  }
+}
