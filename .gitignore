@@ -1,0 +1,63 @@
+# .gitignore
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime/Cache
+dist/
+build/
+.next/
+.cache/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# System
+.env/
+venv/
+__pycache__/
+*.pyc
+
+# Project specific
+.antigravity/
+.openclaw/
+.agent-town/
+config/*.json
+!config/openclaw-template.json
+!config/.env.example
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.turbo/
+dist-*/
+*.tgz

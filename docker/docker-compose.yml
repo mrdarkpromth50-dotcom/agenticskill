@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  antigravity-proxy:
+    image: node:20-slim
+    container_name: antigravity-claude-proxy
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=8080
+    command: bash -c "npm install -g antigravity-claude-proxy@latest && antigravity-claude-proxy start"
+    volumes:
+      - antigravity-data:/root/.antigravity
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  openclaw:
+    image: node:24-slim
+    container_name: openclaw-gateway
+    ports:
+      - "18789:18789"
+    environment:
+      - NODE_ENV=production
+      - OPENCLAW_PORT=18789
+    command: bash -c "npm install -g openclaw@latest && openclaw gateway --port 18789"
+    volumes:
+      - openclaw-data:/root/.openclaw
+      - ./config/openclaw-template.json:/root/.openclaw/openclaw.json
+    networks:
+      - agentic-network
+    depends_on:
+      - antigravity-proxy
+    restart: unless-stopped
+
+  agent-town:
+    image: node:20-slim
+    container_name: agent-town-ui
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - GATEWAY_URL=ws://openclaw:18789
+    command: bash -c "npx @geezerrrr/agent-town --port 3000 --gateway ws://openclaw:18789/"
+    networks:
+      - agentic-network
+    depends_on:
+      - openclaw
+    restart: unless-stopped
+
+volumes:
+  antigravity-data:
+  openclaw-data:
+
+networks:
+  agentic-network:
+    driver: bridge

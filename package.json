@@ -1,0 +1,34 @@
+{
+  "name": "agenticskill",
+  "version": "1.0.0",
+  "description": "Full AutoAgentic System - Antigravity Claude Proxy + OpenClaw + Agent Town",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && bash scripts/install-services.sh",
+    "start:proxy": "antigravity-claude-proxy start",
+    "start:openclaw": "openclaw gateway --port 18789",
+    "start:agent-town": "npx @geezerrrr/agent-town --port 3000 --gateway ws://127.0.0.1:18789/",
+    "start:all": "bash scripts/start-all.sh",
+    "stop:all": "bash scripts/stop-all.sh",
+    "status": "bash scripts/check-status.sh",
+    "setup:openclaw": "bash scripts/setup-openclaw.sh",
+    "docker:build": "docker-compose -f docker/docker-compose.yml build",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f"
+  },
+  "keywords": [
+    "agentic",
+    "claude",
+    "openclaw",
+    "agent-town",
+    "ai",
+    "automation"
+  ],
+  "author": "mrdarkpromth50-dotcom",
+  "license": "MIT",
+  "devDependencies": {
+    "antigravity-claude-proxy": "latest",
+    "openclaw": "latest"
+  }
+}

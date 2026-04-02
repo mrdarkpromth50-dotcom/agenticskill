@@ -1,0 +1,49 @@
+# OpenClaw Configuration Template
+# This file is used by OpenClaw to configure models and providers
+
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "antigravity-proxy": {
+        "baseUrl": "http://127.0.0.1:8080",
+        "apiKey": "test",
+        "api": "anthropic-messages",
+        "models": [
+          {
+            "id": "gemini-3-flash",
+            "name": "Gemini 3 Flash",
+            "reasoning": true,
+            "contextWindow": 1048576
+          },
+          {
+            "id": "claude-sonnet-4-6-thinking",
+            "name": "Claude Sonnet 4.6 Thinking",
+            "reasoning": true,
+            "contextWindow": 200000
+          },
+          {
+            "id": "claude-3-5-sonnet-20241022",
+            "name": "Claude 3.5 Sonnet",
+            "reasoning": false,
+            "contextWindow": 200000
+          }
+        ]
+      }
+    }
+  },
+  "channels": {
+    "slack": {
+      "enabled": false,
+      "botToken": "xoxb-YOUR-BOT-TOKEN"
+    },
+    "discord": {
+      "enabled": false,
+      "token": "YOUR-DISCORD-TOKEN"
+    },
+    "telegram": {
+      "enabled": false,
+      "token": "YOUR-TELEGRAM-BOT-TOKEN"
+    }
+  }
+}
