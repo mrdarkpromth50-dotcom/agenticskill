@@ -1,0 +1,2 @@
+# agenticskill
+Project Full AutoAgentic
