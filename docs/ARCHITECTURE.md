@@ -1,370 +1,231 @@
-# Architecture and Integration Guide
+# สถาปัตยกรรมระบบ Agentic Hybrid
 
-## System Overview
+เอกสารนี้อธิบายสถาปัตยกรรมโดยรวมของระบบ Agentic Hybrid ที่ผสมผสานระหว่าง Persistent Swarm Workers และ Spawn-on-Demand Workers เพื่อให้ระบบมีความยืดหยุ่น ประหยัดทรัพยากร และมีความสามารถในการจดจำบริบทที่ต่อเนื่อง
 
-AgenticSkill is a complete AI agent management system combining three powerful open-source tools:
+## 1. ภาพรวมสถาปัตยกรรม
 
+ระบบ Agentic จะถูกสร้างขึ้นบนพื้นฐานของ OpenClaw Gateway ที่ทำหน้าที่เป็น Hub กลางในการเชื่อมต่อและสื่อสารระหว่างส่วนประกอบต่างๆ โดยมี Antigravity Proxy สำหรับจัดการการเข้าถึง LLM และระบบ Memory ที่ซับซ้อนเพื่อรองรับ Persistent Agent รวมถึง Language Translation Layer สำหรับการสื่อสารหลายภาษา
+
+```mermaid
+graph TD
+    Boss[บอส (มนุษย์)] -- คำสั่ง --> TelegramBot[Telegram Bot]
+    Boss -- คำสั่ง --> TUI[TUI CLI OpenClaw]
+
+    TelegramBot --> OpenClawGateway[OpenClaw Gateway]
+    TUI --> OpenClawGateway
+
+    OpenClawGateway -- WebSocket --> UITown[UI Town (Agent Town)]
+    OpenClawGateway -- Discord Bot API --> Discord[Discord Server]
+
+    subgraph Hybrid Agent System
+        OpenClawGateway -- จัดการ --> PersistentAgentLayer[Persistent Agent Layer]
+        PersistentAgentLayer -- จัดการ Lifecycle --> PersistentAgents[Persistent Agents (CEO, CTO, Accountant, etc.)]
+        
+        PersistentAgents -- ร้องของาน --> SpawnManager[Spawn Manager]
+        SpawnManager -- จัดการ Queue/Pool --> SpawnedAgents[Spawn-on-Demand Agents (Dev, Designer, etc.)]
+        
+        PersistentAgents -- อ่าน/เขียน --> MemorySystem[Memory System]
+        MemorySystem -- Short-term --> Redis[Redis]
+        MemorySystem -- Long-term --> VectorDB[Vector DB / PostgreSQL]
+        MemorySystem -- Shared --> SharedDB[Shared DB / Message Queue]
+    end
+
+    PersistentAgents -- LLM API Calls --> AntigravityProxy[Antigravity Proxy]
+    SpawnedAgents -- LLM API Calls --> AntigravityProxy
+
+    AntigravityProxy -- Account Rotation --> GoogleAccounts[Google Accounts (10-20)]
+    GoogleAccounts -- API --> LLMs[LLMs: Gemini / Opus]
+
+    UITown -- แสดงผล/รับ Input --> PersistentAgents
+    UITown -- แสดงผล/รับ Input --> SpawnedAgents
+    Discord -- แชท/แจ้งเตือน --> PersistentAgents
+    Discord -- แชท/แจ้งเตือน --> SpawnedAgents
+
+    subgraph Language Translation
+        TranslationLayer[Translation Layer]
+    end
+    AntigravityProxy -- แปลภาษา --> TranslationLayer
+    TranslationLayer -- ส่งไป LLM --> LLMs
+    LLMs -- ผลลัพธ์ --> TranslationLayer
+    TranslationLayer -- แปลกลับ --> AntigravityProxy
+
+    CEO[CEO Agent] -- Proactive Research --> WebSearch[Web Search/News API]
+    WebSearch --> CEO
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                      User Interfaces                            │
-│                                                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────┐  │
-│  │  Agent Town      │  │  OpenClaw CLI    │  │  Chat Apps  │  │
-│  │  Pixel RPG       │  │  Web UI          │  │  25+ Channels│ │
-│  │  (localhost:3000)│  │  (Dashboard)     │  │  (Telegram  │  │
-│  │                  │  │                  │  │   Discord   │  │
-│  │  - Task mgmt     │  │  - Settings      │  │   Slack etc)│  │
-│  │  - Real-time viz │  │  - Model config  │  │             │  │
-│  │  - Worker status │  │  - Logs          │  │             │  │
-│  └────────┬─────────┘  └────────┬─────────┘  └──────┬──────┘  │
-└───────────┼──────────────────────┼────────────────────┼─────────┘
-            │                      │                    │
-            │                      │                    │
-       WebSocket                HTTP/WebSocket        HTTP/WebSocket
-            │                      │                    │
-            └──────────────────────┼────────────────────┘
-                                   ▼
-                 ┌──────────────────────────────────┐
-                 │   OpenClaw Gateway               │
-                 │  (Port 18789 - localhost)        │
-                 │                                  │
-                 │  - Multi-protocol handler        │
-                 │  - Tool routing                  │
-                 │  - Session management            │
-                 │  - Model switching               │
-                 │  - Context preservation          │
-                 └────────────┬─────────────────────┘
-                              │
-                           HTTP/A PI
-                              │
-                 ┌────────────▼────────────────┐
-                 │  Antigravity Claude Proxy   │
-                 │  (Port 8080 - localhost)    │
-                 │                             │
-                 │  - Anthropic-compatible API │
-                 │  - Model abstraction        │
-                 │  - Account management       │
-                 │  - Rate limiting            │
-                 │  - Logging & analytics      │
-                 └────────────┬────────────────┘
-                              │
-                        Google OAuth2
-                              │
-        ┌─────────────────────┴──────────────────────┐
-        │                                            │
-        ▼                                            ▼
-    Google Cloud                              Google Accounts
-    Claude API                                (Antigravity)
-    Gemini API                                Gemini API Access
-        │                                            │
-        ├──────────────────┬──────────────────────────┤
-        │                  │                          │
-        ▼                  ▼                          ▼
-    Claude 3.5        Gemini 3 Flash         Claude Sonnet 4.6
-    Sonnet            (Streaming)            (Thinking)
 ```
 
----
+## 2. ส่วนประกอบหลักของระบบ
 
-## Component Details
+### 2.1 OpenClaw Gateway (Hub กลาง)
 
-### 1. Agent Town (Frontend)
-**Purpose:** Visual management interface for AI agents
-**Technology:** Next.js + React + Phaser 3 (pixel art game engine)
-**Port:** 3000
+OpenClaw Gateway ทำหน้าที่เป็นศูนย์กลางการสื่อสารและจัดการการไหลของข้อมูลทั้งหมดในระบบ Agentic เปรียบเสมือน Hub ที่เชื่อมต่อทุกส่วนเข้าด้วยกัน
 
-#### Key Features:
-- RPG-style office interface
-- Real-time task assignment
-- Worker status visualization
-- Live streaming tool execution
-- Multiple sessions support
+*   **หน้าที่หลัก:**
+    *   **รับคำสั่งจากบอส:** รับคำสั่งจากบอสผ่าน Telegram Bot และ TUI CLI OpenClaw
+    *   **กระจายข้อมูล:** ส่งข้อมูลและคำสั่งไปยัง Agent ที่เกี่ยวข้อง, UI Town, และ Discord
+    *   **จัดการการเชื่อมต่อ:** ดูแลการเชื่อมต่อแบบ WebSocket กับ UI Town และการเชื่อมต่อ API กับ Discord Bot
+    *   **เป็นสะพานเชื่อม:** ทำหน้าที่เป็นสะพานเชื่อมระหว่างโลกภายนอก (บอส, Telegram) กับโลกภายในของ Agent (Persistent Agents, Spawned Agents, Memory System)
 
-#### Communication Flow:
-```
-User Actions (UI) 
-    ↓
-React Component
-    ↓
-WebSocket → OpenClaw Gateway
-    ↓
-Task Queuing
-    ↓
-Agent Execution
-    ↓
-Status Update → WebSocket → UI Update
-```
+### 2.2 UI Town (Agent Town)
 
-### 2. OpenClaw Gateway (Hub)
-**Purpose:** Central routing and orchestration
-**Technology:** Node.js TypeScript
-**Port:** 18789 (WebSocket)
+UI Town เป็นส่วนติดต่อผู้ใช้แบบกราฟิกที่ Agent สามารถทำงานร่วมกันได้ และบอสสามารถใช้ติดตามสถานะการทำงานของ Agent ได้แบบ Real-time
 
-#### Key Responsibilities:
-- **Protocol Translation:** HTTP/WebSocket to internal format
-- **Multi-channel Routing:** Direct messages to correct agents
-- **Session Management:** Context and token tracking
-- **Tool Invocation:** Browser, Canvas, Cron, etc.
-- **Model Abstraction:** Switch between providers seamlessly
+*   **การเชื่อมต่อกับ OpenClaw:** UI Town เชื่อมต่อกับ OpenClaw Gateway ผ่าน WebSocket เพื่อการสื่อสารแบบ Real-time
+*   **การแสดงผล:** แสดงผลสถานะของ Agent, Task Board, การสนทนา, และผลลัพธ์ของงาน
+*   **การโต้ตอบ:** Agent สามารถโต้ตอบกันและกับบอสได้ผ่าน UI นี้
 
-#### Request Flow:
-```
-Incoming Request (HTTP/WS)
-    ↓
-Authentication & Pairing
-    ↓
-Session Lookup
-    ↓
-Model Provider Selection
-    ↓
-Forward to API (Antigravity Proxy)
-    ↓
-Stream Response Back
-```
+### 2.3 Discord Server
 
-### 3. Antigravity Claude Proxy (API Layer)
-**Purpose:** Unified AI model proxy
-**Technology:** Node.js
-**Port:** 8080
+Discord Server ทำหน้าที่เป็นช่องทางการสื่อสารหลักระหว่าง Agent และเป็นช่องทางในการแจ้งเตือนต่างๆ
 
-#### Key Capabilities:
-- **Account Management:** Multiple Google accounts
-- **API Compatibility:** Anthropic-compatible interface
-- **Model Support:**
-  - Claude 3.5 Sonnet
-  - Claude Sonnet 4.6 (Thinking)
-  - Gemini 3 Flash
-  - Gemini 2 (Pro)
+*   **การเชื่อมต่อกับ OpenClaw:** Discord เชื่อมต่อกับ OpenClaw Gateway ผ่าน Discord Bot API
+*   **ห้องสำหรับแต่ละแผนก:** มีการจัดตั้งห้อง Discord สำหรับแต่ละแผนก/หน้าที่ เพื่อให้ Agent สามารถสื่อสารกันได้อย่างเป็นระบบ
+*   **การแจ้งเตือน:** ใช้สำหรับแจ้งเตือนสถานะงาน, การเงินเข้า-ออก (สำหรับ Accountant), หรือเหตุการณ์สำคัญอื่นๆ
 
-#### Authentication:
-```
-User Request
-    ↓
-Proxy Receives (localhost:8080)
-    ↓
-Account Selection (round-robin or specified)
-    ↓
-Google OAuth Token Refresh
-    ↓
-Forward to Claude/Gemini API
-    ↓
-Response Parsing & Caching
-    ↓
-Return to Caller
+### 2.4 Antigravity Proxy
+
+Antigravity Proxy เป็นตัวกลางในการจัดการการเข้าถึง LLM (Large Language Models) และเป็นส่วนสำคัญในการจัดการ Account Rotation และ Load Balancing
+
+*   **หน้าที่หลัก:**
+    *   **รวม LLM API:** รวมการเข้าถึง LLM หลายตัว (เช่น Opus 4.6 Think, Gemini 3 Pro High) เข้าด้วยกัน
+    *   **Account Rotation:** จัดการการสลับใช้งาน Google Account จำนวน 10-20 บัญชี เพื่อหลีกเลี่ยง Rate Limit และเพิ่มความเสถียร
+    *   **Load Balancing:** กระจาย Request ไปยัง LLM ที่เหมาะสมและมี Load น้อยที่สุด
+    *   **Language Translation Integration:** ทำงานร่วมกับ Translation Layer เพื่อแปลภาษาของ Prompt ก่อนส่งไปยัง LLM และแปลผลลัพธ์กลับมา
+
+### 2.5 Persistent Agent Layer
+
+ชั้นการทำงานสำหรับ Agent ถาวรที่รันอยู่ตลอดเวลา มี Memory ของตัวเอง และทำหน้าที่บริหารจัดการ, ตัดสินใจ, และเฝ้าระวังระบบ
+
+*   **Agent Process Manager:** ดูแล Lifecycle ของ Persistent Agent (Initialization, Heartbeat, Auto-restart, Shutdown)
+*   **Memory/State Management:** จัดการการจัดเก็บและเรียกคืนข้อมูลความจำและสถานะของ Persistent Agent
+*   **Agent Identity:** ข้อมูลประจำตัวของ Agent (ID, Persona, Role, Assigned Skills/Tools, Memory Pointer)
+
+### 2.6 Spawn Manager
+
+ระบบจัดการการสร้าง (Spawn) และยุติ (Terminate) Spawn-on-Demand Workers ตาม Task ที่ได้รับมอบหมาย
+
+*   **Task Queue:** จัดการคิวงานที่ Persistent Agent ส่งมาให้ Spawn-on-Demand Worker
+*   **Agent Pool:** กลุ่มของ Agent ที่พร้อมใช้งานและสามารถ Spawn ขึ้นมาได้
+*   **Task Completion & Cleanup:** ติดตามสถานะ Task และยุติ Agent พร้อมล้างทรัพยากรเมื่อ Task เสร็จสิ้น
+*   **Result Handoff:** ส่งมอบผลลัพธ์จาก Spawn-on-Demand Worker กลับไปยัง Persistent Agent ผู้สั่งงาน
+
+### 2.7 Memory System
+
+ระบบความจำที่ซับซ้อนเพื่อรองรับความต้องการของ Agent แต่ละประเภท
+
+*   **Short-term Memory (Redis):** สำหรับเก็บข้อมูลบริบทปัจจุบันของการสนทนาหรือ Task ที่ Agent กำลังดำเนินการอยู่
+*   **Long-term Memory (Vector DB / PostgreSQL):** สำหรับเก็บประวัติการทำงานทั้งหมด, ความรู้ที่สะสม, Best Practices, และข้อมูลอ้างอิงต่างๆ
+*   **Shared Memory (Redis / Kafka / PostgreSQL):** สำหรับเก็บข้อมูลที่ Agent หลายตัวจำเป็นต้องเข้าถึงและใช้งานร่วมกัน เช่น ข้อมูลโปรเจกต์, สถานะของระบบโดยรวม, การแจ้งเตือน
+
+### 2.8 Language Translation Layer
+
+ระบบแปลภาษาอัตโนมัติที่ทำหน้าที่เป็นตัวกลางในการแปลภาษา (ไทย <-> อังกฤษ) สำหรับการสื่อสารกับ LLM Provider และบอส
+
+*   **ตำแหน่งในสถาปัตยกรรม:** อยู่ระหว่าง Antigravity Proxy และ LLM Provider
+*   **Flow การแปล:**
+    1.  **จากบอส/Agent (ไทย):** Prompt ภาษาไทยถูกส่งไปยัง Antigravity Proxy -> Translation Layer แปลเป็นอังกฤษ -> ส่งให้ LLM Provider
+    2.  **จาก LLM Provider (อังกฤษ):** ผลลัพธ์ภาษาอังกฤษจาก LLM Provider -> Translation Layer แปลเป็นไทย -> ส่งกลับไปยัง Antigravity Proxy -> CEO Agent/บอส
+*   **วิธีการ Implement:** สามารถใช้ LLM ในการแปลโดยตรง หรือใช้ Translation API (เช่น Google Translate API) เพื่อความรวดเร็วและแม่นยำ
+
+```mermaid
+graph TD
+    A[บอส/Agent (ไทย)] -- Prompt (ไทย) --> B(Antigravity Proxy)
+    B -- ส่ง Prompt (ไทย) --> C(Translation Layer)
+    C -- แปล (ไทย -> อังกฤษ) --> D(LLM Provider)
+    D -- ผลลัพธ์ (อังกฤษ) --> C
+    C -- แปล (อังกฤษ -> ไทย) --> B
+    B -- ผลลัพธ์ (ไทย) --> A
 ```
 
----
+## 3. Flow การเชื่อมต่อระหว่าง OpenClaw > UI Town > Discord
 
-## Data Flow Examples
+### 3.1 OpenClaw Gateway: Hub กลาง
 
-### Example 1: Simple Message in Agent Town
+OpenClaw Gateway ทำหน้าที่เป็น Hub กลางที่เชื่อมต่อทุกส่วนเข้าด้วยกัน โดยเป็นตัวกลางในการรับส่งข้อมูลและคำสั่งระหว่าง UI Town, Discord, และ Agent ต่างๆ
 
-```
-1. User types message in chat UI
-   └─> "Hello, assign John to write a report"
+### 3.2 UI Town (Agent Town) เชื่อมกับ OpenClaw
 
-2. Agent Town sends via WebSocket
-   └─> ws://localhost:18789/
-   └─> { type: "message", content: "...", sessionId: "...", workerId: 123 }
+UI Town เชื่อมต่อกับ OpenClaw Gateway ผ่าน **WebSocket** ซึ่งเป็นโปรโตคอลที่ช่วยให้สามารถสื่อสารกันได้แบบ Real-time และสองทาง ทำให้ข้อมูลอัปเดตบน UI Town สามารถส่งไปยัง OpenClaw ได้ทันที และข้อมูลจาก OpenClaw ก็สามารถส่งมาแสดงผลบน UI Town ได้อย่างรวดเร็ว
 
-3. OpenClaw receives & routes
-   └─> Finds Worker #123
-   └─> Creates task
-   └─> Selects model (Antigravity Proxy)
+### 3.3 Discord เชื่อมกับ OpenClaw
 
-4. Antigravity Proxy
-   └─> Formats as Anthropic API call
-   └─> Selects Google account
-   └─> Sends to Claude API
+Discord เชื่อมต่อกับ OpenClaw Gateway ผ่าน **Discord Bot API** โดย OpenClaw จะมี Discord Bot ที่ทำหน้าที่เป็นตัวกลางในการรับส่งข้อความและคำสั่งจาก Discord ไปยัง OpenClaw และส่งข้อความตอบกลับหรือการแจ้งเตือนจาก OpenClaw ไปยัง Discord
 
-5. Claude processes
-   └─> Returns streaming response
+### 3.4 เมื่อ Agent ทำงานใน UI Town มันสะท้อนไปที่ Discord ยังไง
 
-6. Response flows back:
-   OpenClaw → Agent Town → UI displays in chat
-```
+1.  **Agent ทำงานใน UI Town:** Agent ทำงานใน UI Town (เช่น อัปเดตสถานะ Task, โพสต์ข้อความในช่องแชทของ Agent Town)
+2.  **UI Town ส่งข้อมูลไป OpenClaw:** ข้อมูลการทำงานของ Agent จะถูกส่งผ่าน WebSocket ไปยัง OpenClaw Gateway
+3.  **OpenClaw ส่งข้อมูลไป Discord Bot:** OpenClaw Gateway ประมวลผลข้อมูลและส่งไปยัง Discord Bot
+4.  **Discord Bot โพสต์ใน Discord:** Discord Bot จะโพสต์ข้อความหรืออัปเดตสถานะใน Discord Channel ที่เกี่ยวข้อง ทำให้ผู้ใช้ใน Discord เห็นการทำงานของ Agent
 
-### Example 2: Tool Invocation (Browser)
+### 3.5 เมื่อมีข้อความใน Discord มันสะท้อนกลับมาที่ UI Town ยังไง
 
-```
-1. Agent needs to browse web
-   └─> Request: "Visit https://example.com"
+1.  **ผู้ใช้โพสต์ใน Discord:** ผู้ใช้ (เช่น บอส, Agent) โพสต์ข้อความใน Discord Channel
+2.  **Discord Bot รับข้อความ:** Discord Bot รับข้อความนั้น
+3.  **Discord Bot ส่งข้อมูลไป OpenClaw:** Discord Bot ส่งข้อความผ่าน Discord Bot API ไปยัง OpenClaw Gateway
+4.  **OpenClaw ส่งข้อมูลไป UI Town:** OpenClaw Gateway ประมวลผลข้อความและส่งผ่าน WebSocket ไปยัง UI Town
+5.  **UI Town แสดงผล:** UI Town แสดงข้อความนั้นในช่องแชทหรือส่วนที่เกี่ยวข้อง ทำให้ Agent ใน UI Town เห็นข้อความจาก Discord
 
-2. OpenClaw detects tool call
-   └─> Tool: "browser"
-   └─> Action: "navigate"
+### 3.6 Antigravity Proxy อยู่ตรงไหนในภาพ
 
-3. Tool execution
-   └─> Browser automation runs
-   └─> Content captured
-   └─> Screenshot/HTML returned
+Antigravity Proxy จะอยู่ระหว่าง OpenClaw Gateway และ LLM Provider โดยทำหน้าที่เป็นตัวกลางในการจัดการ Request ที่จะส่งไปยัง LLM และจัดการ Account Rotation รวมถึง Load Balancing ก่อนที่จะส่ง Request ไปยัง LLM Provider จริงๆ
 
-4. Result fed back to agent
-   └─> Agent continues processing
-   └─> Response sent to user
-```
+```mermaid
+graph TD
+    Boss[บอส] -- Telegram/TUI --> OpenClawGateway[OpenClaw Gateway]
+    OpenClawGateway -- WebSocket --> UITown[UI Town]
+    OpenClawGateway -- Discord Bot API --> Discord[Discord]
 
----
+    subgraph Agent System
+        OpenClawGateway -- Task/Data --> PersistentAgents[Persistent Agents]
+        PersistentAgents -- Spawn Request --> SpawnManager[Spawn Manager]
+        SpawnManager -- Spawn --> SpawnedAgents[Spawned Agents]
+        PersistentAgents -- LLM Request --> AntigravityProxy[Antigravity Proxy]
+        SpawnedAgents -- LLM Request --> AntigravityProxy
+    end
 
-## Configuration Files
+    AntigravityProxy -- Account Rotation/Load Balancing --> TranslationLayer[Translation Layer]
+    TranslationLayer -- LLM API Call --> LLMProvider[LLM Provider (Gemini/Opus)]
 
-### ~/.openclaw/openclaw.json
-Defines model providers and channels:
-
-```json
-{
-  "models": {
-    "providers": {
-      "antigravity-proxy": {
-        "baseUrl": "http://127.0.0.1:8080",
-        "api": "anthropic-messages"
-      }
-    }
-  },
-  "channels": {
-    "discord": { "enabled": true, "token": "..." },
-    "slack": { "enabled": true, "token": "..." }
-  }
-}
+    UITown -- Real-time Update --> PersistentAgents
+    Discord -- Notifications/Chat --> PersistentAgents
 ```
 
-### Environment Variables (.env)
-Fine-tune settings:
+## 4. Flow ข้อมูลเมื่อ Boss สั่งงานจนถึง Agent ทำงานเสร็จ
 
-```env
-PROXY_HOST=127.0.0.1
-PROXY_PORT=8080
-OPENCLAW_PORT=18789
-AGENT_TOWN_PORT=3000
-OPENCLAW_VERBOSE=true
+```mermaid
+graph TD
+    A[Boss สั่งงาน (Telegram/TUI)] --> B(OpenClaw Gateway)
+    B --> C(CEO Agent (Persistent))
+    C -- วางแผน/มอบหมาย --> D(Spawn Manager)
+    D -- Spawn Agent --> E(Spawned Agent (เช่น Dev))
+    E -- ทำงาน/ใช้ LLM --> F(Antigravity Proxy)
+    F -- แปลภาษา --> G(Translation Layer)
+    G -- ส่ง Prompt --> H(LLM Provider)
+    H -- ผลลัพธ์ --> G
+    G -- แปลกลับ --> F
+    F -- ผลลัพธ์ LLM --> E
+    E -- ส่งผลลัพธ์ --> D
+    D -- ส่งผลลัพธ์ --> C
+    C -- สรุป/รายงาน --> B
+    B --> A
 ```
 
----
+## 5. Flow การสื่อสาร 2 ทาง ระหว่าง Discord กับ UI Town ผ่าน OpenClaw
 
-## Integration Patterns
+```mermaid
+graph TD
+    subgraph Discord to UI Town
+        A[ผู้ใช้/Agent ใน Discord] -- โพสต์ข้อความ --> B(Discord Bot)
+        B -- ส่งข้อความ --> C(OpenClaw Gateway)
+        C -- ส่งข้อความ --> D(UI Town)
+        D -- แสดงผล --> E[Agent ใน UI Town]
+    end
 
-### Pattern 1: Local Development
-All services on localhost, direct communication:
+    subgraph UI Town to Discord
+        F[Agent ใน UI Town] -- โพสต์ข้อความ/อัปเดต --> G(UI Town)
+        G -- ส่งข้อมูล --> H(OpenClaw Gateway)
+        H -- ส่งข้อมูล --> I(Discord Bot)
+        I -- โพสต์ข้อความ/อัปเดต --> J[ผู้ใช้/Agent ใน Discord]
+    end
 ```
-Browser: localhost:3000 (Agent Town)
-         localhost:8080 (Proxy Dashboard)
-         
-WebSocket: ws://localhost:18789 (OpenClaw)
-```
-
-### Pattern 2: Docker Deployment
-Services in containers, internal Docker network:
-```
-antigravity-proxy → 0.0.0.0:8080
-openclaw:18789 (internal)
-agent-town → 0.0.0.0:3000
-```
-
-### Pattern 3: Distributed Setup
-Services on different machines:
-```
-Agent Town: machine-a:3000
-OpenClaw: machine-b:18789
-Proxy: machine-c:8080 (with firewall restrictions)
-```
-
----
-
-## Performance Considerations
-
-### Resource Usage
-| Component | CPU | RAM | Disk |
-|-----------|-----|-----|------|
-| Antigravity Proxy | Low | 200MB | 50MB |
-| OpenClaw | Medium | 300MB | 100MB |
-| Agent Town | Low | 150MB | 50MB |
-| **Total** | **Medium** | **~700MB** | **~200MB** |
-
-### Scaling Strategies
-
-1. **Multiple Proxy Instances**
-   - Load balance across instances
-   - Separate Google accounts per instance
-   - Better quota utilization
-
-2. **Openclaw Clustering**
-   - Central session store (Redis)
-   - Multiple gateway instances
-   - Distributed task queues
-
-3. **Agent Town Redundancy**
-   - Stateless frontend
-   - Can run multiple instances
-   - Share OpenClaw gateway
-
----
-
-## Security Architecture
-
-### 1. Authentication
-```
-OpenClaw: DM-based pairing
-├─ Secure handshake
-├─ Token exchange
-└─ Approval workflow
-
-Antigravity: API Key
-├─ Fixed token ("test" by default)
-├─ Localhost-only by default
-└─ Can restrict to VPN/firewall
-```
-
-### 2. Authorization
-```
-Per-session access control
-├─ User/session identification
-├─ Tool permission matrix
-└─ Rate limiting per session
-```
-
-### 3. Data Protection
-```
-Encryption in transit:
-├─ HTTPS for API calls
-├─ WSS for WebSocket (optional)
-└─ Local storage only (no cloud sync)
-```
-
----
-
-## Troubleshooting Guide
-
-### Debug Mode
-```bash
-# Verbose logging
-OPENCLAW_VERBOSE=true openclaw gateway --port 18789
-
-# Proxy debugging
-VERBOSE=true antigravity-claude-proxy start
-```
-
-### Connection Issues
-```bash
-# Test connectivity
-curl http://localhost:8080/health
-curl http://localhost:18789/health
-
-# WebSocket test
-wscat -c ws://localhost:18789/
-```
-
-### Log Locations
-```
-Proxy logs: ~/.antigravity/logs/
-OpenClaw logs: ~/.openclaw/logs/
-Agent Town: Browser console
-```
-
----
-
-## Extended Documentation
-
-For more details, see:
-- `INSTALLATION.md` - Setup guide
-- `USAGE.md` - Day-to-day operations
-- Individual project wikis (linked in README)
