@@ -1,0 +1,9 @@
+{
+  "id": "research_source_evaluation",
+  "name": "Source Evaluation",
+  "description": "Ability to critically assess the credibility and reliability of information sources.",
+  "tools": [
+    "fact_checking_tool",
+    "reputation_analysis_tool"
+  ]
+}

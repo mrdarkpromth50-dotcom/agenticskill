@@ -1,0 +1,9 @@
+{
+  "id": "product_requirements_gathering",
+  "name": "Requirements Gathering",
+  "description": "Ability to collect, analyze, and document product requirements from stakeholders.",
+  "tools": [
+    "requirements_management_tool",
+    "user_story_mapping_tool"
+  ]
+}

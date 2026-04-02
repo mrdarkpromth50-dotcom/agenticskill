@@ -1,0 +1,6 @@
+{
+    "id": "qa_automated_testing",
+    "name": "Automated Testing",
+    "description": "Ability to write and maintain automated tests.",
+    "department": "QA"
+}

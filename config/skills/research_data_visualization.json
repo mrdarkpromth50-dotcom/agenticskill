@@ -1,0 +1,10 @@
+{
+  "id": "research_data_visualization",
+  "name": "Data Visualization",
+  "description": "Ability to create graphical representations of data to communicate insights effectively.",
+  "tools": [
+    "tableau_api",
+    "powerbi_api",
+    "matplotlib_library"
+  ]
+}

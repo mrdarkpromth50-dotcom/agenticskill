@@ -1,0 +1,9 @@
+{
+  "id": "marketing_proofreading",
+  "name": "Proofreading",
+  "description": "Ability to review and correct written content for grammar, spelling, and punctuation.",
+  "tools": [
+    "grammar_checker",
+    "content_editor"
+  ]
+}

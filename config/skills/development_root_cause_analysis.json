@@ -1,0 +1,6 @@
+{
+    "id": "development_root_cause_analysis",
+    "name": "Root Cause Analysis",
+    "description": "Ability to perform deep analysis to find the root cause of a problem.",
+    "department": "Development"
+}

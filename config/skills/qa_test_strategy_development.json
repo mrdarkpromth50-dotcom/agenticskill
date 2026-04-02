@@ -1,0 +1,9 @@
+{
+  "id": "qa_test_strategy_development",
+  "name": "Test Strategy Development",
+  "description": "Ability to define the overall approach and objectives for software testing.",
+  "tools": [
+    "test_management_system",
+    "project_management_tool"
+  ]
+}

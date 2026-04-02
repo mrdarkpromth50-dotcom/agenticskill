@@ -1,0 +1,6 @@
+{
+    "id": "devops_security_patching",
+    "name": "Security Patching",
+    "description": "Ability to apply security patches and updates to systems.",
+    "department": "DevOps"
+}

@@ -1,0 +1,6 @@
+{
+    "id": "security_code_analysis",
+    "name": "Security Code Analysis",
+    "description": "Ability to analyze code for security flaws.",
+    "department": "Security"
+}

@@ -1,0 +1,6 @@
+{
+    "id": "qa_bug_reporting",
+    "name": "Bug Reporting",
+    "description": "Ability to write clear and detailed bug reports.",
+    "department": "QA"
+}

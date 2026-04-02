@@ -1,0 +1,9 @@
+{
+  "id": "security_threat_modeling",
+  "name": "Threat Modeling",
+  "description": "Ability to identify potential threats and vulnerabilities in a system's design.",
+  "tools": [
+    "threat_modeling_tool",
+    "risk_assessment_tool"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+    "id": "data_querying",
+    "name": "Data Querying",
+    "description": "Ability to write SQL and other queries to retrieve data.",
+    "department": "Data"
+}

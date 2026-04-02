@@ -1,0 +1,6 @@
+{
+    "id": "devops_deployment",
+    "name": "Deployment",
+    "description": "Ability to deploy applications to various environments.",
+    "department": "DevOps"
+}

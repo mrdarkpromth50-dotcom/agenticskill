@@ -1,0 +1,9 @@
+{
+  "id": "development_project_management",
+  "name": "Project Management",
+  "description": "Ability to plan, execute, and close projects, managing resources and timelines.",
+  "tools": [
+    "project_management_tool",
+    "jira_api"
+  ]
+}

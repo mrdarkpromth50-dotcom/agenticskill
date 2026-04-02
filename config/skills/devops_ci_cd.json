@@ -1,0 +1,6 @@
+{
+    "id": "devops_ci_cd",
+    "name": "CI/CD",
+    "description": "Ability to set up and manage continuous integration and deployment pipelines.",
+    "department": "DevOps"
+}

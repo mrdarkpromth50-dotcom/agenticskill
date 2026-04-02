@@ -1,0 +1,9 @@
+{
+  "id": "qa_test_automation",
+  "name": "Test Automation",
+  "description": "Ability to design, develop, and maintain automated test scripts.",
+  "tools": [
+    "test_automation_framework",
+    "ci_cd_pipeline"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+    "id": "devops_monitoring",
+    "name": "Monitoring",
+    "description": "Ability to set up and manage monitoring and alerting systems.",
+    "department": "DevOps"
+}

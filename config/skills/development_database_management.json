@@ -1,0 +1,6 @@
+{
+    "id": "development_database_management",
+    "name": "Database Management",
+    "description": "Ability to design, query, and manage databases.",
+    "department": "Development"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "management_business_model_analysis",
+  "name": "Business Model Analysis",
+  "description": "Ability to evaluate and optimize business models for profitability and sustainability.",
+  "tools": [
+    "financial_modeling_tool",
+    "business_canvas_tool"
+  ]
+}

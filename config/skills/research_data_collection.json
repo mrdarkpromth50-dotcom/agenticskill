@@ -1,0 +1,10 @@
+{
+  "id": "research_data_collection",
+  "name": "Data Collection",
+  "description": "Ability to gather information from various sources, both internal and external.",
+  "tools": [
+    "web_search_tool",
+    "database_query_tool",
+    "api_client"
+  ]
+}

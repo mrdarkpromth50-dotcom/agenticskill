@@ -1,0 +1,6 @@
+{
+    "id": "finance_expense_tracking",
+    "name": "Expense Tracking",
+    "description": "Ability to track and categorize expenses.",
+    "department": "Finance"
+}

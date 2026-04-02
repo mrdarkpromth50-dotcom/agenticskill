@@ -1,0 +1,9 @@
+{
+  "id": "management_risk_mitigation",
+  "name": "Risk Mitigation",
+  "description": "Ability to develop and implement strategies to reduce the impact of identified risks.",
+  "tools": [
+    "risk_management_tool",
+    "contingency_planning_tool"
+  ]
+}

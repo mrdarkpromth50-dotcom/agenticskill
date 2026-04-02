@@ -1,0 +1,6 @@
+{
+    "id": "qa_manual_testing",
+    "name": "Manual Testing",
+    "description": "Ability to perform manual testing to find bugs.",
+    "department": "QA"
+}

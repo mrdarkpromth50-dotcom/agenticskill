@@ -1,0 +1,6 @@
+{
+    "id": "management_task_delegation",
+    "name": "Task Delegation",
+    "description": "Ability to assign tasks to the appropriate agents and monitor progress.",
+    "department": "Management"
+}

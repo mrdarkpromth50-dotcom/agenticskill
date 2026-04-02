@@ -1,0 +1,6 @@
+{
+    "id": "development_task_breakdown",
+    "name": "Task Breakdown",
+    "description": "Ability to break down large tasks into smaller, manageable sub-tasks.",
+    "department": "Development"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "hr_conflict_resolution",
+  "name": "Conflict Resolution",
+  "description": "Ability to mediate and resolve disputes between agents.",
+  "tools": [
+    "internal_communication_tool",
+    "mediation_tool"
+  ]
+}

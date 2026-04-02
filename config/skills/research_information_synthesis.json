@@ -1,0 +1,9 @@
+{
+  "id": "research_information_synthesis",
+  "name": "Information Synthesis",
+  "description": "Ability to combine diverse pieces of information into a coherent and insightful whole.",
+  "tools": [
+    "llm_access",
+    "note_taking_tool"
+  ]
+}

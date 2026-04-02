@@ -1,0 +1,6 @@
+{
+    "id": "development_code_review",
+    "name": "Code Review",
+    "description": "Ability to review code for quality, correctness, and adherence to standards.",
+    "department": "Development"
+}

@@ -1,0 +1,6 @@
+{
+    "id": "development_bug_triage",
+    "name": "Bug Triage",
+    "description": "Ability to prioritize and assign bug reports.",
+    "department": "Development"
+}

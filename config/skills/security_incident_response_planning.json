@@ -1,0 +1,9 @@
+{
+  "id": "security_incident_response_planning",
+  "name": "Incident Response Planning",
+  "description": "Ability to develop plans for responding to and recovering from security incidents.",
+  "tools": [
+    "incident_response_platform",
+    "playbook_tool"
+  ]
+}

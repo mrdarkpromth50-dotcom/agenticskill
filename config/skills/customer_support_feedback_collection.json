@@ -1,0 +1,9 @@
+{
+  "id": "customer_support_feedback_collection",
+  "name": "Feedback Collection",
+  "description": "Ability to collect and categorize customer feedback for product improvement.",
+  "tools": [
+    "survey_tool",
+    "crm_api"
+  ]
+}

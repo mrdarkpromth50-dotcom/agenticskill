@@ -1,0 +1,9 @@
+{
+  "id": "qa_quality_metrics_analysis",
+  "name": "Quality Metrics Analysis",
+  "description": "Ability to collect, analyze, and report on software quality metrics.",
+  "tools": [
+    "reporting_tool",
+    "data_analysis_tool"
+  ]
+}

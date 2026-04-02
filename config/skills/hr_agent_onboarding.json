@@ -1,0 +1,9 @@
+{
+  "id": "hr_agent_onboarding",
+  "name": "Agent Onboarding",
+  "description": "Ability to manage the process of integrating new agents into the company system.",
+  "tools": [
+    "hr_management_system",
+    "internal_communication_tool"
+  ]
+}

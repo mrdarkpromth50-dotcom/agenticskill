@@ -1,0 +1,9 @@
+{
+  "id": "research_statistical_modeling",
+  "name": "Statistical Modeling",
+  "description": "Ability to apply statistical methods to build predictive or descriptive models from data.",
+  "tools": [
+    "r_statistical_software",
+    "python_data_libraries"
+  ]
+}

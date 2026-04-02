@@ -1,0 +1,6 @@
+{
+    "id": "qa_quality_metrics",
+    "name": "Quality Metrics",
+    "description": "Ability to define and track quality metrics.",
+    "department": "QA"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "customer_support_communication",
+  "name": "Customer Communication",
+  "description": "Ability to communicate effectively and empathetically with customers.",
+  "tools": [
+    "chat_support_platform",
+    "email_client"
+  ]
+}

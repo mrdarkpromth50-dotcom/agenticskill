@@ -1,0 +1,9 @@
+{
+  "id": "product_market_analysis",
+  "name": "Product Market Analysis",
+  "description": "Ability to analyze market trends, customer needs, and competitive landscape for product development.",
+  "tools": [
+    "market_research_tool",
+    "competitor_analysis_tool"
+  ]
+}

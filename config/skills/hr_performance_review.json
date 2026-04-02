@@ -1,0 +1,9 @@
+{
+  "id": "hr_performance_review",
+  "name": "Performance Review",
+  "description": "Ability to assess agent performance and provide feedback.",
+  "tools": [
+    "hr_management_system",
+    "reporting_tool"
+  ]
+}

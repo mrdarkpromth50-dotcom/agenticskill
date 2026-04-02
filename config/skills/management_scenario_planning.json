@@ -1,0 +1,9 @@
+{
+  "id": "management_scenario_planning",
+  "name": "Scenario Planning",
+  "description": "Ability to develop multiple future scenarios and strategic responses.",
+  "tools": [
+    "simulation_tool",
+    "risk_assessment_tool"
+  ]
+}

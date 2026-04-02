@@ -1,0 +1,9 @@
+{
+  "id": "hr_policy_enforcement",
+  "name": "Policy Enforcement",
+  "description": "Ability to ensure agents adhere to company policies and guidelines.",
+  "tools": [
+    "hr_management_system",
+    "policy_database"
+  ]
+}

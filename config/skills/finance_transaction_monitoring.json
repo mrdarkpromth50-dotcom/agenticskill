@@ -1,0 +1,6 @@
+{
+    "id": "finance_transaction_monitoring",
+    "name": "Transaction Monitoring",
+    "description": "Ability to monitor financial transactions in real-time.",
+    "department": "Finance"
+}

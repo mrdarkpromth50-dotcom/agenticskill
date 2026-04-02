@@ -1,0 +1,6 @@
+{
+    "id": "finance_budgeting",
+    "name": "Budgeting",
+    "description": "Ability to create and manage budgets.",
+    "department": "Finance"
+}

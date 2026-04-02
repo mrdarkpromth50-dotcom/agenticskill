@@ -1,0 +1,6 @@
+{
+    "id": "security_penetration_testing",
+    "name": "Penetration Testing",
+    "description": "Ability to conduct penetration tests to find vulnerabilities.",
+    "department": "Security"
+}

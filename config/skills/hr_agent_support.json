@@ -1,0 +1,9 @@
+{
+  "id": "hr_agent_support",
+  "name": "Agent Support",
+  "description": "Ability to provide assistance and resources to agents for their well-being and productivity.",
+  "tools": [
+    "internal_communication_tool",
+    "knowledge_base_tool"
+  ]
+}

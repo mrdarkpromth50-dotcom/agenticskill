@@ -1,0 +1,6 @@
+{
+    "id": "qa_release_management",
+    "name": "Release Management",
+    "description": "Ability to manage the release process and ensure quality.",
+    "department": "QA"
+}

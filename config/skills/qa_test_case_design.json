@@ -1,0 +1,9 @@
+{
+  "id": "qa_test_case_design",
+  "name": "Test Case Design",
+  "description": "Ability to create detailed test cases to verify software functionality.",
+  "tools": [
+    "test_management_system",
+    "requirements_management_tool"
+  ]
+}

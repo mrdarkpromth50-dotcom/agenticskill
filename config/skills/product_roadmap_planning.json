@@ -1,0 +1,9 @@
+{
+  "id": "product_roadmap_planning",
+  "name": "Product Roadmap Planning",
+  "description": "Ability to create and manage a product roadmap, outlining features and timelines.",
+  "tools": [
+    "product_management_software",
+    "jira_api"
+  ]
+}

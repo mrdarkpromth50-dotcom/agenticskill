@@ -1,0 +1,6 @@
+{
+    "id": "qa_test_strategy",
+    "name": "Test Strategy",
+    "description": "Ability to define the overall testing strategy for a project.",
+    "department": "QA"
+}

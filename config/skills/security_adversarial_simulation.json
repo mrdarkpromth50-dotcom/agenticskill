@@ -1,0 +1,6 @@
+{
+    "id": "security_adversarial_simulation",
+    "name": "Adversarial Simulation",
+    "description": "Ability to simulate attacks from real-world adversaries.",
+    "department": "Security"
+}

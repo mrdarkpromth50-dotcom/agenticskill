@@ -1,0 +1,6 @@
+{
+    "id": "security_physical_penetration_testing",
+    "name": "Physical Penetration Testing",
+    "description": "Ability to conduct physical penetration tests.",
+    "department": "Security"
+}

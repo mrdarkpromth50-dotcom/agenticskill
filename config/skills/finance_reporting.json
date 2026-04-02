@@ -1,0 +1,6 @@
+{
+    "id": "finance_reporting",
+    "name": "Financial Reporting",
+    "description": "Ability to generate financial reports and statements.",
+    "department": "Finance"
+}

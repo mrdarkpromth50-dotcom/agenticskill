@@ -1,0 +1,6 @@
+{
+    "id": "security_social_engineering",
+    "name": "Social Engineering",
+    "description": "Ability to conduct social engineering attacks to test human defenses.",
+    "department": "Security"
+}

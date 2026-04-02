@@ -1,0 +1,9 @@
+{
+  "id": "product_strategy_development",
+  "name": "Product Strategy Development",
+  "description": "Ability to define the long-term vision and strategic direction for products.",
+  "tools": [
+    "market_research_tool",
+    "business_model_canvas"
+  ]
+}

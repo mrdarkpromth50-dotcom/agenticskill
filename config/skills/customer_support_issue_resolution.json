@@ -1,0 +1,9 @@
+{
+  "id": "customer_support_issue_resolution",
+  "name": "Issue Resolution",
+  "description": "Ability to diagnose and resolve customer problems and inquiries.",
+  "tools": [
+    "crm_api",
+    "knowledge_base_tool"
+  ]
+}

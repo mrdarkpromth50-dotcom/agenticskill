@@ -1,0 +1,9 @@
+{
+  "id": "qa_performance_testing",
+  "name": "Performance Testing",
+  "description": "Ability to assess software responsiveness, stability, and scalability under load.",
+  "tools": [
+    "performance_testing_tool",
+    "load_testing_tool"
+  ]
+}

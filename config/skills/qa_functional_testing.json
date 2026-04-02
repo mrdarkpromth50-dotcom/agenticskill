@@ -1,0 +1,9 @@
+{
+  "id": "qa_functional_testing",
+  "name": "Functional Testing",
+  "description": "Ability to execute tests to ensure software functions as per requirements.",
+  "tools": [
+    "test_automation_framework",
+    "manual_testing_tool"
+  ]
+}

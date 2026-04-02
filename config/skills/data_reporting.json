@@ -1,0 +1,6 @@
+{
+    "id": "data_reporting",
+    "name": "Data Reporting",
+    "description": "Ability to create reports and dashboards to present data.",
+    "department": "Data"
+}

@@ -1,0 +1,6 @@
+{
+    "id": "management_reporting",
+    "name": "Reporting",
+    "description": "Ability to generate clear and concise reports on task status and outcomes.",
+    "department": "Management"
+}

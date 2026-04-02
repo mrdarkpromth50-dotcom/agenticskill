@@ -1,0 +1,9 @@
+{
+  "id": "customer_support_product_knowledge",
+  "name": "Product Knowledge",
+  "description": "Extensive understanding of the company's products and services.",
+  "tools": [
+    "knowledge_base_tool",
+    "product_documentation"
+  ]
+}

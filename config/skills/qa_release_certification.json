@@ -1,0 +1,9 @@
+{
+  "id": "qa_release_certification",
+  "name": "Release Certification",
+  "description": "Ability to formally approve software for release based on quality criteria.",
+  "tools": [
+    "test_management_system",
+    "release_management_tool"
+  ]
+}

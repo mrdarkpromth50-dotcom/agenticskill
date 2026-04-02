@@ -1,0 +1,10 @@
+{
+  "id": "research_data_analysis",
+  "name": "Data Analysis",
+  "description": "Ability to inspect, cleanse, transform, and model data to discover useful information.",
+  "tools": [
+    "python_data_libraries",
+    "r_data_libraries",
+    "spreadsheet_tool"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "product_lifecycle_management",
+  "name": "Product Lifecycle Management",
+  "description": "Ability to manage a product through its entire lifecycle, from conception to retirement.",
+  "tools": [
+    "product_management_software",
+    "analytics_tool"
+  ]
+}

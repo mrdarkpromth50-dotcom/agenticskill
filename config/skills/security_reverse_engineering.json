@@ -1,0 +1,9 @@
+{
+  "id": "security_reverse_engineering",
+  "name": "Reverse Engineering",
+  "description": "Ability to analyze software or systems to understand their design and functionality.",
+  "tools": [
+    "disassembler",
+    "debugger_tool"
+  ]
+}
