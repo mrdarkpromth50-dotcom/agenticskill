@@ -76,7 +76,7 @@ services:
       - agentic-network
     restart: unless-stopped
 
-  # Ollama for local LLM (optional, for translation layer or other LLM services)
+  # Ollama for local LLM
   ollama:
     image: ollama/ollama
     container_name: agentic-ollama
@@ -101,6 +101,9 @@ services:
       - VECTOR_DB_URL=${VECTOR_DB_URL}
       - VECTOR_DB_TYPE=${VECTOR_DB_TYPE}
       - PORT=${MEMORY_SYSTEM_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
@@ -120,6 +123,9 @@ services:
       - PERSISTENT_AGENT_HEARTBEAT_INTERVAL=${PERSISTENT_AGENT_HEARTBEAT_INTERVAL}
       - PERSISTENT_AGENT_AUTO_RESTART=${PERSISTENT_AGENT_AUTO_RESTART}
       - PORT=${PERSISTENT_AGENT_LAYER_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
@@ -139,13 +145,16 @@ services:
     environment:
       - SPAWN_MAX_CONCURRENT=${SPAWN_MAX_CONCURRENT}
       - SPAWN_TASK_TIMEOUT=${SPAWN_TASK_TIMEOUT}
-      - AGENT_CONFIG_DIR=/app/config/agents # Assuming config is mounted or copied
+      - AGENT_CONFIG_DIR=/app/config/agents
       - PORT=${SPAWN_MANAGER_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
       - redis
-      - chromadb # If agent configs are loaded from memory system
+      - chromadb
       - openclaw
     restart: unless-stopped
 
@@ -161,6 +170,9 @@ services:
       - ANTIGRAVITY_PROXY_URL=${ANTIGRAVITY_PROXY_URL}
       - SPAWN_MANAGER_URL=${SPAWN_MANAGER_URL}
       - PORT=${SPAWN_AGENTS_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
@@ -180,10 +192,13 @@ services:
       - TRANSLATION_API_URL=${TRANSLATION_API_URL}
       - TRANSLATION_MODEL=${TRANSLATION_MODEL}
       - PORT=${TRANSLATION_LAYER_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
-      - ollama # If using Ollama for translation
+      - ollama
     restart: unless-stopped
 
   # Account Manager Service
@@ -198,6 +213,9 @@ services:
       - ACCOUNT_ROTATION_INTERVAL=${ACCOUNT_ROTATION_INTERVAL}
       - LLM_ACCOUNT_HEALTH_CHECK_INTERVAL=${LLM_ACCOUNT_HEALTH_CHECK_INTERVAL}
       - PORT=${ACCOUNT_MANAGER_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     restart: unless-stopped
@@ -220,8 +238,11 @@ services:
       - SPAWN_MANAGER_URL=${SPAWN_MANAGER_URL}
       - TRANSLATION_LAYER_URL=${TRANSLATION_LAYER_URL}
       - ACCOUNT_MANAGER_URL=${ACCOUNT_MANAGER_URL}
-      - ANTIGRAVITY_PROXY_URL=${ANTIGRAVITY_PROXY_URL} # Added for TaskPlanner
+      - ANTIGRAVITY_PROXY_URL=${ANTIGRAVITY_PROXY_URL}
       - PORT=${CEO_AGENT_PORT}
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     depends_on:
@@ -230,11 +251,43 @@ services:
       - spawn-manager
       - translation-layer
       - account-manager
-      - antigravity-proxy # Added dependency
-      - openclaw # CEO might use openclaw for internal communication or monitoring
+      - antigravity-proxy
+      - openclaw
     restart: unless-stopped
 
-  # Discord Bot Service (existing)
+  # Monitoring & Alerting Service
+  monitoring:
+    build:
+      context: ../services/monitoring
+      dockerfile: Dockerfile
+    container_name: agentic-monitoring
+    ports:
+      - "3008:3008"
+    environment:
+      - PORT=3008
+      - METRICS_COLLECTION_INTERVAL=${METRICS_COLLECTION_INTERVAL}
+      - ALERT_CHECK_INTERVAL=${ALERT_CHECK_INTERVAL}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL}
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - PERSISTENT_AGENT_LAYER_URL=http://persistent-agent-layer:3002
+      - SPAWN_MANAGER_URL=http://spawn-manager:3003
+      - CEO_AGENT_URL=http://ceo-agent:3004
+      - TRANSLATION_LAYER_URL=http://translation-layer:3005
+      - ACCOUNT_MANAGER_URL=http://account-manager:3006
+      - SPAWN_AGENTS_URL=http://spawn-agents:3007
+    networks:
+      - agentic-network
+    depends_on:
+      - memory-system
+      - persistent-agent-layer
+      - spawn-manager
+      - ceo-agent
+      - translation-layer
+      - account-manager
+      - spawn-agents
+    restart: unless-stopped
+
+  # Discord Bot Service
   discord-bot:
     build:
       context: ../services/discord-bot
@@ -249,7 +302,7 @@ services:
       - openclaw
     restart: unless-stopped
 
-  # Telegram Bot Service (existing)
+  # Telegram Bot Service
   telegram-bot:
     build:
       context: ../services/telegram-bot

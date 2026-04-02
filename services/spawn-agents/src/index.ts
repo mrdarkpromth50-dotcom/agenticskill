@@ -7,12 +7,23 @@ import { DesignerAgent } from './designer-agent';
 import { CopywriterAgent } from './copywriter-agent';
 import { SpawnAgentConfig, TaskPayload, AgentFactory } from './types';
 
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+
 const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
 app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3007;
 
-// --- Agent Factory ---
+// In-memory store for spawned agents (for demonstration purposes)
+const activeSpawnedAgents: Map<string, BaseSpawnAgent> = new Map();
+
+// Agent factory function
 const agentFactory: AgentFactory = {
   'developer': DeveloperAgent,
   'researcher': ResearcherAgent,
@@ -28,11 +39,15 @@ app.get('/health', (req, res) => {
 });
 
 // Endpoint to spawn and execute an agent
-app.post('/spawn', async (req, res) => {
+app.post('/spawn', async (req, res, next) => {
   const { agentType, taskId, taskPayload, agentConfig }: { agentType: string; taskId: string; taskPayload: TaskPayload; agentConfig: SpawnAgentConfig } = req.body;
 
   if (!agentType || !taskId || !taskPayload || !agentConfig) {
     return res.status(400).send({ error: 'Missing required fields: agentType, taskId, taskPayload, agentConfig' });
+  }
+
+  if (activeSpawnedAgents.has(taskId)) {
+    return res.status(409).send({ error: `Agent for task ${taskId} already exists.` });
   }
 
   const AgentConstructor = agentFactory[agentType];
@@ -47,17 +62,37 @@ app.post('/spawn', async (req, res) => {
     // Execute the task in the background, don't wait for it to complete
     agent.executeTask().then(result => {
       console.log(`[Spawn-Agents Service] Agent ${agent.id} for task ${taskId} finished with result:`, result);
+      activeSpawnedAgents.delete(taskId);
+      // In a real scenario, this would report back to Spawn Manager or CEO Agent
     }).catch(error => {
       console.error(`[Spawn-Agents Service] Agent ${agent.id} for task ${taskId} failed with error:`, error);
-      // The agent itself should report failure to Spawn Manager, but this catches unexpected errors
+      activeSpawnedAgents.delete(taskId);
+      // Report failure
     });
 
     res.status(202).send({ message: `Agent ${agent.id} of type ${agentType} spawned for task ${taskId}` });
   } catch (error) {
-    console.error('[API ERROR] POST /spawn:', error);
-    res.status(500).send({ error: 'Internal server error while spawning agent' });
+    next(error);
   }
 });
+
+// Get status of a spawned agent
+app.get('/status/:taskId', (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+    const agent = activeSpawnedAgents.get(taskId);
+    if (agent) {
+      res.status(200).send({ taskId, status: 'running', type: agent.config.type });
+    } else {
+      res.status(404).send({ error: `Agent for task ${taskId} not found or completed.` });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 app.listen(PORT, () => {
@@ -67,6 +102,10 @@ app.listen(PORT, () => {
 // --- GRACEFUL SHUTDOWN ---
 const shutdown = () => {
   console.log('Shutting down Spawn-Agents Service gracefully...');
+  // Terminate any active agents if necessary
+  activeSpawnedAgents.forEach(agent => {
+    // agent.terminate(); // Assuming a terminate method exists
+  });
   process.exit(0);
 };
 

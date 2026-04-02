@@ -5,10 +5,19 @@ import { HealthCheck } from './health-check';
 import { Account } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-const app = express();
-app.use(json());
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+// import { CircuitBreaker, RetryHandler, ServiceHealthChecker } from '@agenticskill/resilience'; // Not directly used in index.ts for middleware
 
-const PORT = process.env.PORT || 3004;
+const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
+app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3006; // Updated default port to 3006
 
 // --- INITIALIZATION ---
 console.log("Initializing Account Manager Service...");
@@ -16,7 +25,7 @@ const rotation = new AccountRotation();
 const healthCheck = new HealthCheck(rotation);
 
 // Start periodic health check every 5 minutes
-healthCheck.startPeriodicCheck(300000);
+healthCheck.startPeriodicCheck(parseInt(process.env.ACCOUNT_HEALTH_CHECK_INTERVAL || '300000', 10));
 
 // --- API ENDPOINTS ---
 
@@ -24,17 +33,16 @@ app.get('/health', (req, res) => {
   res.status(200).send({ status: 'ok', service: 'account-manager' });
 });
 
-app.get('/accounts', (req, res) => {
+app.get('/accounts', (req, res, next) => {
   try {
     const accounts = rotation.getAccountStats();
     res.status(200).send(accounts);
   } catch (error) {
-    console.error('[API ERROR] GET /accounts:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving accounts' });
+    next(error);
   }
 });
 
-app.post('/accounts', (req, res) => {
+app.post('/accounts', (req, res, next) => {
   try {
     const { type, apiKey } = req.body;
     if (!type || !apiKey) {
@@ -49,12 +57,11 @@ app.post('/accounts', (req, res) => {
     });
     res.status(201).send(newAccount);
   } catch (error) {
-    console.error('[API ERROR] POST /accounts:', error);
-    res.status(500).send({ error: 'Internal server error while adding account' });
+    next(error);
   }
 });
 
-app.delete('/accounts/:id', (req, res) => {
+app.delete('/accounts/:id', (req, res, next) => {
   try {
     const wasDeleted = rotation.removeAccount(req.params.id);
     if (wasDeleted) {
@@ -63,12 +70,11 @@ app.delete('/accounts/:id', (req, res) => {
       res.status(404).send({ error: `Account ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] DELETE /accounts/${req.params.id}:`, error);
-    res.status(500).send({ error: 'Internal server error while deleting account' });
+    next(error);
   }
 });
 
-app.get('/accounts/next', (req, res) => {
+app.get('/accounts/next', (req, res, next) => {
   try {
     const { type, strategy } = req.query;
     let account: Account | undefined;
@@ -85,12 +91,11 @@ app.get('/accounts/next', (req, res) => {
       res.status(404).send({ error: 'No available accounts found' });
     }
   } catch (error) {
-    console.error('[API ERROR] GET /accounts/next:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving next account' });
+    next(error);
   }
 });
 
-app.get('/accounts/:id/stats', (req, res) => {
+app.get('/accounts/:id/stats', (req, res, next) => {
   try {
     const stats = rotation.getStatsForAccount(req.params.id);
     if (stats) {
@@ -99,12 +104,11 @@ app.get('/accounts/:id/stats', (req, res) => {
       res.status(404).send({ error: `Account ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] GET /accounts/${req.params.id}/stats:`, error);
-    res.status(500).send({ error: 'Internal server error while retrieving account stats' });
+    next(error);
   }
 });
 
-app.post('/accounts/:id/rate-limit', (req, res) => {
+app.post('/accounts/:id/rate-limit', (req, res, next) => {
   try {
     const { duration } = req.body; // in milliseconds
     if (!duration) {
@@ -117,10 +121,12 @@ app.post('/accounts/:id/rate-limit', (req, res) => {
       res.status(404).send({ error: `Account ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] POST /accounts/${req.params.id}/rate-limit:`, error);
-    res.status(500).send({ error: 'Internal server error while marking rate limit' });
+    next(error);
   }
 });
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 app.listen(PORT, () => {

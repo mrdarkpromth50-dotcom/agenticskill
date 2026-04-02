@@ -1,0 +1,24 @@
+{
+  "name": "@agenticskill/security",
+  "version": "1.0.0",
+  "description": "Shared security middleware for Agentic Skill services.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["security", "middleware", "express", "api-key", "rate-limit", "error-handling"],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.4.5"
+  }
+}

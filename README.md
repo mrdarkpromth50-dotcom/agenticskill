@@ -24,45 +24,41 @@
 *   **OpenClaw Gateway:** Hub กลางในการเชื่อมต่อ Agent, UI Town, Discord, และ Telegram
 *   **UI Town (Agent Town):** แพลตฟอร์ม UI สำหรับ Agent ในการทำงานร่วมกันและบอสใช้ติดตามสถานะ
 *   **Discord Server:** ช่องทางการสื่อสารหลักระหว่าง Agent และการแจ้งเตือนต่างๆ
-*   **Antigravity Proxy:** ระบบจัดการการเข้าถึง LLM (Opus 4.6 Think, Gemini 3 Pro High) พร้อมกลไก Account Rotation และ Load Balancing สำหรับ Google Account จำนวน 10-20 บัญชี
+*   **Antigravity Proxy:** ระบบจัดการการเข้าถึง LLM พร้อมกลไก Account Rotation และ Load Balancing
 *   **Persistent Agent Layer:** ชั้นการทำงานสำหรับ Agent ถาวร พร้อม Agent Process Manager และ Memory/State Management
 *   **Spawn Manager:** ระบบจัดการการสร้างและยุติ Spawn-on-Demand Workers ตาม Task
-*   **Memory System:** ประกอบด้วย Short-term Memory (Redis), Long-term Memory (Vector DB/PostgreSQL), และ Shared Memory (Redis/Message Queue) เพื่อให้ Agent มีความจำและบริบทที่ต่อเนื่อง
-*   **Language Translation Layer:** ระบบแปลภาษาอัตโนมัติ (ไทย <-> อังกฤษ) สำหรับการสื่อสารกับ LLM Provider และบอส
+*   **Memory System:** ประกอบด้วย Short-term Memory (Redis), Long-term Memory (Vector DB), และ Shared Memory (Redis)
+*   **Language Translation Layer:** ระบบแปลภาษาอัตโนมัติ (ไทย <-> อังกฤษ)
 *   **LLM Account Manager:** บริการจัดการบัญชี LLM หลายบัญชี, Account Rotation, และ Health Check
+*   **Monitoring & Alerting:** ระบบเฝ้าระวังสถานะของทุก Service พร้อม Dashboard และการแจ้งเตือนผ่าน Webhook
 
 ### 4. Flow การทำงานหลัก (สรุป)
 
-1.  **Boss Command:** บอสส่งคำสั่งผ่าน Telegram หรือ TUI CLI OpenClaw
-2.  **CEO Ingestion & Planning:** CEO Agent รับคำสั่ง, วิเคราะห์, วางแผน, และสร้าง Roadmap
+1.  **Boss Command:** บอสส่งคำสั่งผ่าน Telegram หรือ Discord
+2.  **CEO Ingestion & Planning:** CEO Agent รับคำสั่ง, วิเคราะห์ด้วย Task Planner (LLM), และสร้าง Execution Plan
 3.  **Task Assignment:** CEO มอบหมาย Task ให้ Persistent Agent หรือสั่ง Spawn-on-Demand Worker ผ่าน Spawn Manager
 4.  **Agent Execution:** Agent ดำเนินการตาม Task โดยใช้ LLM และ Tools ที่มี
-5.  **Collaboration:** Agent สื่อสารและทำงานร่วมกันผ่าน Discord และ UI Town
-6.  **Review & Debug:** งานที่เสร็จสิ้นจะถูกตรวจสอบ, หาบัค, และแก้ไข
+5.  **Collaboration:** Agent สื่อสารและทำงานร่วมกันผ่าน Shared Memory และ Discord
+6.  **Review & Debug:** งานที่เสร็จสิ้นจะถูกตรวจสอบและรายงานผล
 7.  **Reporting to CEO:** Agent รายงานผลกลับไปยัง CEO
-8.  **CEO Consolidation & Reporting to Boss:** CEO สรุปผลและรายงานให้บอสทราบ (เฉพาะงานที่เสร็จสมบูรณ์)
+8.  **CEO Consolidation & Reporting to Boss:** CEO สรุปผลและรายงานให้บอสทราบผ่าน Progress Tracker
 
-### 5. Roadmap การพัฒนา (สรุป)
+### 5. Roadmap การพัฒนา
 
-การพัฒนาจะแบ่งออกเป็น 3 Phase หลัก:
+*   **Phase 1: Core Infrastructure & Persistent Agent Layer:** สร้างรากฐานระบบและ Persistent Agent
+*   **Phase 2: Hybrid Agent System & Advanced Features:** ระบบ Hybrid Agent, Task Planning, และ Shared Memory
+*   **Phase 3: Optimization, Security & Production Readiness:** ระบบ Monitoring, Security Middleware, Resilience (Circuit Breaker/Retry), และ Error Handling
 
-*   **Phase 1: Core Infrastructure & Persistent Agent Layer:** เน้นการสร้างรากฐานสำหรับ Agent ถาวรและระบบความจำ
-*   **Phase 2: Hybrid Agent System & Advanced Features:** พัฒนาระบบ Hybrid Agent System เต็มรูปแบบ, Implement Memory System ที่ซับซ้อนขึ้น, และเพิ่มฟังก์ชันการทำงานขั้นสูง
-*   **Phase 3: Optimization, Scaling & Production Readiness:** ปรับปรุงประสิทธิภาพ, ความเสถียร, ความปลอดภัย, และเตรียมระบบให้พร้อมสำหรับการใช้งานจริงในระยะยาว
+### 6. Security & Resilience (Phase 3 Features)
 
-### 6. Open-Source ที่แนะนำ (สรุป)
-
-จะมีการนำ Open-Source Tools และ Frameworks ต่างๆ มาประยุกต์ใช้ เช่น LangGraph, CrewAI/AutoGen สำหรับ Agent Frameworks; Redis, ChromaDB, PostgreSQL สำหรับ Memory & Database; PM2, RabbitMQ/Kafka สำหรับ Process Management; และ LiteLLM/LiteLLM Proxy สำหรับ LLM Proxy & Load Balancing
-
-### 7. LLM Login Account Management & Gmail Testing
-
-ระบบจะมีการจัดการบัญชี Google Account จำนวน 10-20 บัญชี สำหรับการเข้าถึง LLM ผ่าน Antigravity Proxy ด้วยกลไก Account Rotation และ Load Balancing เพื่อหลีกเลี่ยง Rate Limit และเพิ่มความเสถียร
-
-มีการวางแผนทดสอบการสลับ Account จริงโดยใช้ Gmail ที่เชื่อมต่อไว้ เพื่อตรวจสอบการ Login, Account Switching, การจัดการ Rate Limiting และ Error Handling
+ระบบใน Phase 3 ได้รับการอัปเกรดเพื่อความปลอดภัยและความเสถียรระดับ Production:
+*   **API Key Authentication:** ทุก Service ต้องมีการตรวจสอบ API Key ก่อนเข้าถึง
+*   **Rate Limiting:** ป้องกันการเรียกใช้งาน API เกินขีดจำกัด
+*   **Circuit Breaker:** ป้องกันระบบล่มต่อเนื่องเมื่อ Service ปลายทางมีปัญหา
+*   **Retry Mechanism:** ระบบพยายามเรียกใช้งานใหม่โดยอัตโนมัติเมื่อเกิดข้อผิดพลาดชั่วคราว
+*   **Global Error Handling:** ระบบจัดการข้อผิดพลาดแบบรวมศูนย์และ Request Logging
 
 ### Quick Start (เริ่มต้นใช้งาน)
-
-เพื่อเริ่มต้นระบบ Agentic Company บนเครื่อง Local ของคุณ:
 
 1.  **Clone Repository:**
     ```bash
@@ -71,90 +67,44 @@
     ```
 
 2.  **ตั้งค่า Environment Variables:**
-    คัดลอกไฟล์ `.env.example` เป็น `.env` และแก้ไขค่าตัวแปรต่างๆ ให้ถูกต้อง:
+    คัดลอกไฟล์ `.env.example` เป็น `.env` และแก้ไขค่าตัวแปรต่างๆ:
     ```bash
     cp docker/.env.example docker/.env
-    # แก้ไข docker/.env ด้วยข้อมูลของคุณ (เช่น Discord/Telegram Tokens, LLM API Keys)
     ```
 
-3.  **สร้าง Agent Profiles และ Skill Definitions:**
-    รันสคริปต์เพื่อสร้างไฟล์คอนฟิกูเรชัน Agent และ Skill:
-    ```bash
-    chmod +x scripts/setup-agents.sh
-    ./scripts/setup-agents.sh
-    ```
-
-4.  **รันระบบด้วย Docker Compose:**
-    สร้างและรันบริการทั้งหมดโดยใช้ Docker Compose:
+3.  **รันระบบด้วย Docker Compose:**
     ```bash
     chmod +x scripts/start-all.sh
     ./scripts/start-all.sh
     ```
 
-5.  **ตรวจสอบสถานะ Health Check:**
+4.  **ตรวจสอบสถานะ Health Check:**
     ```bash
     chmod +x scripts/health-check.sh
     ./scripts/health-check.sh
     ```
 
-6.  **เข้าถึง UI Town:**
-    เมื่อระบบทำงานแล้ว คุณสามารถเข้าถึง UI Town ได้ที่ `http://localhost:3000`
-
 ### Services และ Ports
-
-บริการหลักทั้งหมดจะถูกรันใน Docker และสามารถเข้าถึงได้ผ่านพอร์ตที่กำหนด:
 
 | Service Name               | Port | Description                                     |
 | :------------------------- | :--- | :---------------------------------------------- |
 | `agent-town`               | 3000 | UI สำหรับ Agent Town                             |
-| `memory-system`            | 3001 | บริการจัดการ Short-term และ Long-term Memory     |
-| `persistent-agent-layer`   | 3002 | บริการจัดการ Persistent Agent และ Heartbeat      |
-| `spawn-manager`            | 3003 | บริการจัดการการสร้างและยุติ Spawn-on-Demand Agent |
-| `ceo-agent`                | 3004 | บริการหลักของ CEO Agent                          |
+| `memory-system`            | 3001 | บริการจัดการ Memory (Short/Long/Shared)          |
+| `persistent-agent-layer`   | 3002 | บริการจัดการ Persistent Agent                    |
+| `spawn-manager`            | 3003 | บริการจัดการ Spawn-on-Demand Agent               |
+| `ceo-agent`                | 3004 | บริการหลักของ CEO Agent (Planner/Tracker)        |
 | `translation-layer`        | 3005 | บริการแปลภาษา                                   |
-| `account-manager`          | 3006 | บริการจัดการ LLM Account Rotation และ Health Check |
+| `account-manager`          | 3006 | บริการจัดการ LLM Account Rotation                |
+| `spawn-agents`             | 3007 | Template สำหรับ Spawned Agents                   |
+| `monitoring`               | 3008 | Monitoring Dashboard & Alerting                  |
 | `antigravity-proxy`        | 8080 | Proxy สำหรับการเข้าถึง LLM                       |
 | `openclaw`                 | 18789| Gateway สำหรับการสื่อสารภายในระบบ                |
-| `redis`                    | 6379 | Redis Cache และ Short-term Memory               |
-| `chromadb`                 | 8000 | Vector Database สำหรับ Long-term Memory          |
-| `ollama`                   | 11434| Local LLM (ถ้ามีการใช้งาน)                      |
 
-### Environment Variables
+### การตรวจสอบ Monitoring Dashboard
 
-ไฟล์ `docker/.env.example` มีตัวแปรสภาพแวดล้อมที่จำเป็นทั้งหมด คุณต้องคัดลอกไฟล์นี้เป็น `docker/.env` และแก้ไขค่าให้เหมาะสมกับการตั้งค่าของคุณ:
-
-```bash
-cp docker/.env.example docker/.env
-```
-
-ตัวอย่างตัวแปรที่สำคัญ:
-
-*   **Discord/Telegram Tokens:** สำหรับการสื่อสารของ CEO Agent
-*   **REDIS_URL, VECTOR_DB_URL:** การเชื่อมต่อกับระบบ Memory
-*   **TRANSLATION_API_URL, TRANSLATION_MODEL:** การตั้งค่าสำหรับ Translation Layer
-*   **SPAWN_MAX_CONCURRENT, SPAWN_TASK_TIMEOUT:** การตั้งค่าสำหรับ Spawn Manager
-*   **ACCOUNT_ROTATION_INTERVAL, LLM_ACCOUNT_HEALTH_CHECK_INTERVAL:** การตั้งค่าสำหรับ Account Manager
-*   **MEMORY_SYSTEM_URL, SPAWN_MANAGER_URL, TRANSLATION_LAYER_URL, ACCOUNT_MANAGER_URL:** URL สำหรับการสื่อสารระหว่าง Services
-
-### การตรวจสอบ Health (Health Check)
-
-คุณสามารถตรวจสอบสถานะการทำงานของ Services ทั้งหมดได้โดยรันสคริปต์ `health-check.sh`:
-
-```bash
-chmod +x scripts/health-check.sh
-./scripts/health-check.sh
-```
-
-สคริปต์นี้จะทำการเรียก `GET /health` endpoint ของแต่ละ Service และรายงานสถานะกลับมา
+คุณสามารถเข้าถึง Dashboard เพื่อดูสถานะของระบบและ Metrics ต่างๆ ได้ที่:
+`http://localhost:3008/dashboard`
 
 ### เอกสารประกอบ
 
-รายละเอียดเพิ่มเติมสามารถดูได้จากเอกสารในโฟลเดอร์ `docs/`:
-
-*   `docs/MASTER_PLAN.md`: แผนแม่บทบริษัท Agentic ฉบับเต็ม
-*   `docs/ARCHITECTURE.md`: สถาปัตยกรรมระบบ Agentic Hybrid โดยละเอียด
-*   `docs/CEO_FLOW.md`: Flow การทำงานของ CEO Agent และโปรโตคอลการสื่อสาร
-*   `docs/AGENT_ROLES.md`: โครงสร้างบริษัทและบทบาทของ Agent แต่ละตำแหน่ง
-*   `docs/DISCORD_SETUP.md`: การตั้งค่า Discord Server สำหรับ Agentic Company
-*   `docs/DEVELOPMENT_ROADMAP.md`: แผนงานการพัฒนาโดยละเอียด
-*   `TESTING_PLAN.md`: แผนการทดสอบระบบทั้งหมด
+รายละเอียดเพิ่มเติมสามารถดูได้จากเอกสารในโฟลเดอร์ `docs/`

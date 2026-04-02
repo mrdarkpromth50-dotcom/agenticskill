@@ -1,26 +1,26 @@
 {
-  "name": "spawn-agents",
+  "name": "monitoring-service",
   "version": "1.0.0",
-  "description": "Service for providing templates and running spawned agents on demand.",
+  "description": "Service for collecting metrics, managing alerts, and providing a dashboard.",
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js"
   },
-  "keywords": [],
+  "keywords": ["monitoring", "metrics", "alerting", "dashboard"],
   "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
     "express": "^4.19.2",
     "axios": "^1.6.8",
-    "uuid": "^9.0.1",
-    "@agenticskill/security": "^1.0.0",
-    "@agenticskill/resilience": "^1.0.0"
+    "os": "^0.1.2",
+    "ejs": "^3.1.10"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",
+    "@types/ejs": "^3.1.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }

@@ -5,8 +5,17 @@ import { SharedMemory } from './shared-memory';
 import { MemorySearch } from './memory-search';
 import { ShortTermMemoryStoreRequest, LongTermMemoryStoreRequest, LongTermMemorySearchRequest } from './types';
 
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+// import { CircuitBreaker, RetryHandler, ServiceHealthChecker } from '@agenticskill/resilience'; // Not directly used in index.ts for middleware
+
 const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
 app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
 
 // --- CONFIGURATION ---
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -36,7 +45,7 @@ app.get('/health', (req, res) => {
 
 // --- Short-Term Memory (Redis) ---
 
-app.post('/memory/short-term', async (req, res) => {
+app.post('/memory/short-term', async (req, res, next) => {
   try {
     const { agentId, key, value, ttl } = req.body as ShortTermMemoryStoreRequest;
     if (!agentId || !key || value === undefined) {
@@ -46,12 +55,11 @@ app.post('/memory/short-term', async (req, res) => {
     console.log(`Stored short-term memory for agent [${agentId}] at key [${key}]`);
     res.status(201).send({ message: 'Short-term memory stored successfully' });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/short-term:', error);
-    res.status(500).send({ error: 'Internal server error while storing short-term memory' });
+    next(error);
   }
 });
 
-app.get('/memory/short-term/:agentId/:key', async (req, res) => {
+app.get('/memory/short-term/:agentId/:key', async (req, res, next) => {
   try {
     const { agentId, key } = req.params;
     const value = await memoryManager.getShortTermMemory(agentId, key);
@@ -63,14 +71,13 @@ app.get('/memory/short-term/:agentId/:key', async (req, res) => {
       res.status(404).send({ error: 'Short-term memory not found' });
     }
   } catch (error) {
-    console.error('[API ERROR] GET /memory/short-term/:agentId/:key:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving short-term memory' });
+    next(error);
   }
 });
 
 // --- Long-Term Memory (ChromaDB) ---
 
-app.post('/memory/long-term', async (req, res) => {
+app.post('/memory/long-term', async (req, res, next) => {
   try {
     const { agentId, document, embedding, metadata } = req.body as LongTermMemoryStoreRequest;
     if (!agentId || !document || !embedding) {
@@ -80,12 +87,11 @@ app.post('/memory/long-term', async (req, res) => {
     console.log(`Stored long-term memory for agent [${agentId}], received ID [${docId}]`);
     res.status(201).send({ message: 'Long-term memory stored successfully', id: docId });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/long-term:', error);
-    res.status(500).send({ error: 'Internal server error while storing long-term memory' });
+    next(error);
   }
 });
 
-app.post('/memory/long-term/search', async (req, res) => {
+app.post('/memory/long-term/search', async (req, res, next) => {
   try {
     const { agentId, queryEmbedding, nResults, where } = req.body as LongTermMemorySearchRequest;
     if (!agentId || !queryEmbedding) {
@@ -95,14 +101,13 @@ app.post('/memory/long-term/search', async (req, res) => {
     console.log(`Performed long-term memory search for agent [${agentId}], found ${results.length} results`);
     res.status(200).send({ results });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/long-term/search:', error);
-    res.status(500).send({ error: 'Internal server error while searching long-term memory' });
+    next(error);
   }
 });
 
 // --- Shared Memory (Redis Pub/Sub & State) ---
 
-app.post('/memory/shared/publish', async (req, res) => {
+app.post('/memory/shared/publish', async (req, res, next) => {
   try {
     const { channel, message } = req.body;
     if (!channel || !message) {
@@ -111,14 +116,13 @@ app.post('/memory/shared/publish', async (req, res) => {
     await sharedMemory.publish(channel, message);
     res.status(200).send({ message: 'Message published to shared memory' });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/shared/publish:', error);
-    res.status(500).send({ error: 'Internal server error while publishing to shared memory' });
+    next(error);
   }
 });
 
 // Note: Subscribing via HTTP is tricky for persistent connections. This is a simplified example.
 // A real-world scenario might use WebSockets or server-sent events.
-app.post('/memory/shared/subscribe', async (req, res) => {
+app.post('/memory/shared/subscribe', async (req, res, next) => {
   try {
     const { channel } = req.body;
     if (!channel) {
@@ -132,12 +136,11 @@ app.post('/memory/shared/subscribe', async (req, res) => {
     });
     res.status(200).send({ message: `Subscribed to shared memory channel ${channel}. Messages will be logged.` });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/shared/subscribe:', error);
-    res.status(500).send({ error: 'Internal server error while subscribing to shared memory' });
+    next(error);
   }
 });
 
-app.post('/memory/shared/:key', async (req, res) => {
+app.post('/memory/shared/:key', async (req, res, next) => {
   try {
     const { key } = req.params;
     const { value } = req.body;
@@ -147,12 +150,11 @@ app.post('/memory/shared/:key', async (req, res) => {
     await sharedMemory.setSharedState(key, value);
     res.status(201).send({ message: `Shared state for key ${key} set successfully` });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/shared/:key:', error);
-    res.status(500).send({ error: 'Internal server error while setting shared state' });
+    next(error);
   }
 });
 
-app.get('/memory/shared/:key', async (req, res) => {
+app.get('/memory/shared/:key', async (req, res, next) => {
   try {
     const { key } = req.params;
     const value = await sharedMemory.getSharedState(key);
@@ -162,14 +164,13 @@ app.get('/memory/shared/:key', async (req, res) => {
       res.status(404).send({ error: `Shared state for key ${key} not found` });
     }
   } catch (error) {
-    console.error('[API ERROR] GET /memory/shared/:key:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving shared state' });
+    next(error);
   }
 });
 
 // --- Advanced Memory Search ---
 
-app.post('/memory/search/advanced', async (req, res) => {
+app.post('/memory/search/advanced', async (req, res, next) => {
   try {
     if (!memorySearch) {
       return res.status(503).send({ error: 'Memory search not initialized yet. Please try again.' });
@@ -195,10 +196,12 @@ app.post('/memory/search/advanced', async (req, res) => {
     }
     res.status(200).send({ results });
   } catch (error) {
-    console.error('[API ERROR] POST /memory/search/advanced:', error);
-    res.status(500).send({ error: 'Internal server error during advanced memory search' });
+    next(error);
   }
 });
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 

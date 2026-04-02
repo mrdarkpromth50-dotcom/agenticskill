@@ -6,8 +6,17 @@ import { AgentPool } from './agent-pool';
 import { ResultHandler } from './result-handler';
 import * as path from 'path';
 
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+// import { CircuitBreaker, RetryHandler, ServiceHealthChecker } from '@agenticskill/resilience'; // Not directly used in index.ts for middleware
+
 const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
 app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
 
 // --- CONFIGURATION ---
 const AGENT_CONFIG_DIR = process.env.AGENT_CONFIG_DIR || path.join(__dirname, '..', '..', 'config', 'agents');
@@ -39,7 +48,7 @@ app.get('/health', (req, res) => {
   res.status(200).send({ status: 'ok', service: 'spawn-manager' });
 });
 
-app.post('/tasks', (req, res) => {
+app.post('/tasks', (req, res, next) => {
   try {
     const { agentType, description, payload, requesterCallbackUrl } = req.body;
     if (!agentType || !description) {
@@ -48,23 +57,21 @@ app.post('/tasks', (req, res) => {
     const newTask = taskQueue.enqueue(agentType, description, payload || {}, requesterCallbackUrl);
     res.status(201).send(newTask);
   } catch (error) {
-    console.error('[API ERROR] POST /tasks:', error);
-    res.status(500).send({ error: 'Internal server error while creating task' });
+    next(error);
   }
 });
 
-app.get('/tasks', (req, res) => {
-  const { status } = req.query;
+app.get('/tasks', (req, res, next) => {
   try {
+    const { status } = req.query;
     const tasks = status ? taskQueue.getTasksByStatus(status as any) : taskQueue.getAllTasks();
     res.status(200).send(tasks);
   } catch (error) {
-    console.error('[API ERROR] GET /tasks:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving tasks' });
+    next(error);
   }
 });
 
-app.get('/tasks/:id', (req, res) => {
+app.get('/tasks/:id', (req, res, next) => {
   try {
     const task = taskQueue.getTask(req.params.id);
     if (task) {
@@ -73,12 +80,11 @@ app.get('/tasks/:id', (req, res) => {
       res.status(404).send({ error: `Task ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] GET /tasks/${req.params.id}:`, error);
-    res.status(500).send({ error: 'Internal server error while retrieving task' });
+    next(error);
   }
 });
 
-app.put('/tasks/:id/status', (req, res) => {
+app.put('/tasks/:id/status', (req, res, next) => {
   try {
     const { status, result, error: taskError } = req.body;
     if (!status) {
@@ -93,12 +99,11 @@ app.put('/tasks/:id/status', (req, res) => {
       res.status(404).send({ error: `Task ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] PUT /tasks/${req.params.id}/status:`, error);
-    res.status(500).send({ error: 'Internal server error while updating task' });
+    next(error);
   }
 });
 
-app.delete('/tasks/:id', (req, res) => {
+app.delete('/tasks/:id', (req, res, next) => {
   try {
     const wasDeleted = taskQueue.deleteTask(req.params.id);
     if (wasDeleted) {
@@ -107,33 +112,30 @@ app.delete('/tasks/:id', (req, res) => {
       res.status(404).send({ error: `Task ${req.params.id} not found` });
     }
   } catch (error) {
-    console.error(`[API ERROR] DELETE /tasks/${req.params.id}:`, error);
-    res.status(500).send({ error: 'Internal server error while deleting task' });
+    next(error);
   }
 });
 
-app.get('/agents/active', (req, res) => {
+app.get('/agents/active', (req, res, next) => {
   try {
     const activeAgents = spawnManager.getActiveAgents();
     res.status(200).send(activeAgents);
   } catch (error) {
-    console.error('[API ERROR] GET /agents/active:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving active agents' });
+    next(error);
   }
 });
 
 // New API endpoints for AgentPool
-app.get('/pool/stats', (req, res) => {
+app.get('/pool/stats', (req, res, next) => {
   try {
     const stats = spawnManager.getAgentPoolStats();
     res.status(200).send(stats);
   } catch (error) {
-    console.error('[API ERROR] GET /pool/stats:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving agent pool stats' });
+    next(error);
   }
 });
 
-app.post('/pool/register', (req, res) => {
+app.post('/pool/register', (req, res, next) => {
   try {
     const { type, config } = req.body;
     if (!type || !config) {
@@ -142,10 +144,12 @@ app.post('/pool/register', (req, res) => {
     spawnManager.registerAgentType(type, config);
     res.status(200).send({ message: `Agent type ${type} registered successfully` });
   } catch (error) {
-    console.error('[API ERROR] POST /pool/register:', error);
-    res.status(500).send({ error: 'Internal server error while registering agent type' });
+    next(error);
   }
 });
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 app.listen(PORT, () => {

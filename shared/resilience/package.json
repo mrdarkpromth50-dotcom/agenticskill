@@ -1,0 +1,20 @@
+{
+  "name": "@agenticskill/resilience",
+  "version": "1.0.0",
+  "description": "Shared resilience modules for Agentic Skill services.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["resilience", "circuit-breaker", "retry", "health-check"],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "typescript": "^5.4.5"
+  }
+}

@@ -3,10 +3,19 @@ import { json } from 'body-parser';
 import { TranslationService } from './translation-service';
 import { Language, TranslationRequest } from './types';
 
-const app = express();
-app.use(json());
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+// import { CircuitBreaker, RetryHandler, ServiceHealthChecker } from '@agenticskill/resilience'; // Not directly used in index.ts for middleware
 
-const PORT = process.env.PORT || 3001;
+const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
+app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3005; // Updated default port to 3005
 
 // --- INITIALIZATION ---
 console.log("Initializing Translation Layer Service...");
@@ -20,7 +29,7 @@ app.get('/health', (req, res) => {
 });
 
 // Translate text
-app.post('/translate', async (req, res) => {
+app.post('/translate', async (req, res, next) => {
   try {
     const { text, from, to }: TranslationRequest = req.body;
     if (!text || !from || !to) {
@@ -29,13 +38,12 @@ app.post('/translate', async (req, res) => {
     const result = await translationService.translate(text, from, to);
     res.status(200).send(result);
   } catch (error) {
-    console.error('[API ERROR] POST /translate:', error);
-    res.status(500).send({ error: 'Internal server error during translation' });
+    next(error);
   }
 });
 
 // Detect language
-app.post('/detect', async (req, res) => {
+app.post('/detect', async (req, res, next) => {
   try {
     const { text } = req.body;
     if (!text) {
@@ -44,10 +52,12 @@ app.post('/detect', async (req, res) => {
     const result = await translationService.detectLanguage(text);
     res.status(200).send(result);
   } catch (error) {
-    console.error('[API ERROR] POST /detect:', error);
-    res.status(500).send({ error: 'Internal server error during language detection' });
+    next(error);
   }
 });
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 app.listen(PORT, () => {

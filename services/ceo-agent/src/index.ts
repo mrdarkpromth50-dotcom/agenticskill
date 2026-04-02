@@ -3,8 +3,17 @@ import { json } from 'body-parser';
 import { CEOAgent } from './ceo-logic';
 import { BossCommand } from './types';
 
+// Import shared security and resilience modules
+import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
+// import { CircuitBreaker, RetryHandler, ServiceHealthChecker } from '@agenticskill/resilience'; // Not directly used in index.ts for middleware
+
 const app = express();
+
+// --- Apply Shared Middleware ---
+app.use(requestLogger);
 app.use(json());
+app.use(validateApiKey);
+app.use(createRateLimiter());
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3004;
 
@@ -24,40 +33,37 @@ app.get('/health', (req, res) => {
 });
 
 // Get CEO Agent status
-app.get('/status', (req, res) => {
+app.get('/status', (req, res, next) => {
   try {
     const status = ceoAgent.getStatus();
     res.status(200).send(status);
   } catch (error) {
-    console.error('[API ERROR] GET /status:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving CEO status' });
+    next(error);
   }
 });
 
 // Get active plans
-app.get('/plans', (req, res) => {
+app.get('/plans', (req, res, next) => {
   try {
     const activePlans = ceoAgent.getActivePlans();
     res.status(200).send(activePlans);
   } catch (error) {
-    console.error('[API ERROR] GET /plans:', error);
-    res.status(500).send({ error: 'Internal server error while retrieving active plans' });
+    next(error);
   }
 });
 
 // Trigger a report to the boss
-app.post('/report', async (req, res) => {
+app.post('/report', async (req, res, next) => {
   try {
     await ceoAgent.triggerReport();
     res.status(200).send({ message: 'Report triggered successfully' });
   } catch (error) {
-    console.error('[API ERROR] POST /report:', error);
-    res.status(500).send({ error: 'Internal server error while triggering report' });
+    next(error);
   }
 });
 
 // Receive command from an external source (e.g., another service or a mock boss)
-app.post('/command', async (req, res) => {
+app.post('/command', async (req, res, next) => {
   try {
     const { text, sender, source }: BossCommand = req.body;
     if (!text || !sender || !source) {
@@ -66,10 +72,12 @@ app.post('/command', async (req, res) => {
     await ceoAgent.receiveCommand({ text, sender, source });
     res.status(202).send({ message: 'Command received and being processed' });
   } catch (error) {
-    console.error('[API ERROR] POST /command:', error);
-    res.status(500).send({ error: 'Internal server error while processing command' });
+    next(error);
   }
 });
+
+// --- Global Error Handler (MUST be last middleware) ---
+app.use(globalErrorHandler);
 
 // --- SERVER START ---
 app.listen(PORT, () => {

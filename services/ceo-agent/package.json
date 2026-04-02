@@ -16,7 +16,9 @@
     "discord.js": "^14.15.3",
     "express": "^4.19.2",
     "telegraf": "^4.16.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "@agenticskill/security": "^1.0.0",
+    "@agenticskill/resilience": "^1.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
