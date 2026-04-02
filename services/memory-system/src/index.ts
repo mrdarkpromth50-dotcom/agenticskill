@@ -1,6 +1,8 @@
 import express from 'express';
 import { json } from 'body-parser';
 import { MemoryManager } from './memory-manager';
+import { SharedMemory } from './shared-memory';
+import { MemorySearch } from './memory-search';
 import { ShortTermMemoryStoreRequest, LongTermMemoryStoreRequest, LongTermMemorySearchRequest } from './types';
 
 const app = express();
@@ -9,13 +11,18 @@ app.use(json());
 // --- CONFIGURATION ---
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const CHROMADB_URL = process.env.CHROMADB_URL || 'http://localhost:8000';
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001; // Updated default port to 3001
 
 // --- INITIALIZATION ---
-console.log("Initializing Memory Manager...");
+console.log("Initializing Memory System Service...");
 const memoryManager = new MemoryManager(REDIS_URL, CHROMADB_URL);
+const sharedMemory = new SharedMemory(REDIS_URL);
+let memorySearch: MemorySearch; // Will be initialized after memoryManager connects
 
-memoryManager.connect().catch(err => {
+memoryManager.connect().then(() => {
+  console.log("Memory Manager connected. Initializing Memory Search...");
+  memorySearch = new MemorySearch(memoryManager.getVectorDBClient());
+}).catch(err => {
   console.error('FATAL: Failed to connect to memory services on startup:', err);
   process.exit(1);
 });
@@ -24,7 +31,7 @@ memoryManager.connect().catch(err => {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).send({ status: 'ok' });
+  res.status(200).send({ status: 'ok', service: 'memory-system' });
 });
 
 // --- Short-Term Memory (Redis) ---
@@ -93,6 +100,106 @@ app.post('/memory/long-term/search', async (req, res) => {
   }
 });
 
+// --- Shared Memory (Redis Pub/Sub & State) ---
+
+app.post('/memory/shared/publish', async (req, res) => {
+  try {
+    const { channel, message } = req.body;
+    if (!channel || !message) {
+      return res.status(400).send({ error: 'Missing required fields: channel, message' });
+    }
+    await sharedMemory.publish(channel, message);
+    res.status(200).send({ message: 'Message published to shared memory' });
+  } catch (error) {
+    console.error('[API ERROR] POST /memory/shared/publish:', error);
+    res.status(500).send({ error: 'Internal server error while publishing to shared memory' });
+  }
+});
+
+// Note: Subscribing via HTTP is tricky for persistent connections. This is a simplified example.
+// A real-world scenario might use WebSockets or server-sent events.
+app.post('/memory/shared/subscribe', async (req, res) => {
+  try {
+    const { channel } = req.body;
+    if (!channel) {
+      return res.status(400).send({ error: 'Missing required field: channel' });
+    }
+    // For demonstration, we'll just acknowledge subscription. Actual message delivery would be async.
+    // In a real app, you'd likely establish a WebSocket connection here.
+    await sharedMemory.subscribe(channel, (msg) => {
+      console.log(`[SharedMemory API] Received subscribed message on ${channel}: ${msg}`);
+      // Here you would typically push this message to the client via WebSocket
+    });
+    res.status(200).send({ message: `Subscribed to shared memory channel ${channel}. Messages will be logged.` });
+  } catch (error) {
+    console.error('[API ERROR] POST /memory/shared/subscribe:', error);
+    res.status(500).send({ error: 'Internal server error while subscribing to shared memory' });
+  }
+});
+
+app.post('/memory/shared/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    if (value === undefined) {
+      return res.status(400).send({ error: 'Missing required field: value' });
+    }
+    await sharedMemory.setSharedState(key, value);
+    res.status(201).send({ message: `Shared state for key ${key} set successfully` });
+  } catch (error) {
+    console.error('[API ERROR] POST /memory/shared/:key:', error);
+    res.status(500).send({ error: 'Internal server error while setting shared state' });
+  }
+});
+
+app.get('/memory/shared/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const value = await sharedMemory.getSharedState(key);
+    if (value !== null) {
+      res.status(200).send({ key, value });
+    } else {
+      res.status(404).send({ error: `Shared state for key ${key} not found` });
+    }
+  } catch (error) {
+    console.error('[API ERROR] GET /memory/shared/:key:', error);
+    res.status(500).send({ error: 'Internal server error while retrieving shared state' });
+  }
+});
+
+// --- Advanced Memory Search ---
+
+app.post('/memory/search/advanced', async (req, res) => {
+  try {
+    if (!memorySearch) {
+      return res.status(503).send({ error: 'Memory search not initialized yet. Please try again.' });
+    }
+    const { agentId, query, startTime, endTime, searchType, limit } = req.body;
+    let results;
+
+    switch (searchType) {
+      case 'byAgent':
+        if (!agentId) return res.status(400).send({ error: 'Missing agentId for byAgent search' });
+        results = await memorySearch.searchByAgent(agentId, query, limit);
+        break;
+      case 'byTimeRange':
+        if (!startTime || !endTime) return res.status(400).send({ error: 'Missing startTime or endTime for byTimeRange search' });
+        results = await memorySearch.searchByTimeRange(startTime, endTime, query, limit);
+        break;
+      case 'similar':
+        if (!query) return res.status(400).send({ error: 'Missing query for similar search' });
+        results = await memorySearch.searchSimilar(query, limit);
+        break;
+      default:
+        return res.status(400).send({ error: 'Invalid searchType specified. Must be byAgent, byTimeRange, or similar.' });
+    }
+    res.status(200).send({ results });
+  } catch (error) {
+    console.error('[API ERROR] POST /memory/search/advanced:', error);
+    res.status(500).send({ error: 'Internal server error during advanced memory search' });
+  }
+});
+
 // --- SERVER START ---
 
 app.listen(PORT, () => {
@@ -105,6 +212,8 @@ const shutdown = async () => {
   console.log('Shutting down Memory System Service gracefully...');
   try {
     await memoryManager.disconnect();
+    // Disconnect Redis clients for shared memory
+    // sharedMemory.disconnect(); // Assuming a disconnect method exists or handle client closing
     process.exit(0);
   } catch (err) {
     console.error('Error during graceful shutdown:', err);

@@ -149,6 +149,25 @@ services:
       - openclaw
     restart: unless-stopped
 
+  # Spawn-on-Demand Agent Templates Service
+  spawn-agents:
+    build:
+      context: ../services/spawn-agents
+      dockerfile: Dockerfile
+    container_name: agentic-spawn-agents
+    ports:
+      - "3007:3007"
+    environment:
+      - ANTIGRAVITY_PROXY_URL=${ANTIGRAVITY_PROXY_URL}
+      - SPAWN_MANAGER_URL=${SPAWN_MANAGER_URL}
+      - PORT=${SPAWN_AGENTS_PORT}
+    networks:
+      - agentic-network
+    depends_on:
+      - antigravity-proxy
+      - spawn-manager
+    restart: unless-stopped
+
   # Translation Layer Service
   translation-layer:
     build:
@@ -201,6 +220,7 @@ services:
       - SPAWN_MANAGER_URL=${SPAWN_MANAGER_URL}
       - TRANSLATION_LAYER_URL=${TRANSLATION_LAYER_URL}
       - ACCOUNT_MANAGER_URL=${ACCOUNT_MANAGER_URL}
+      - ANTIGRAVITY_PROXY_URL=${ANTIGRAVITY_PROXY_URL} # Added for TaskPlanner
       - PORT=${CEO_AGENT_PORT}
     networks:
       - agentic-network
@@ -210,6 +230,7 @@ services:
       - spawn-manager
       - translation-layer
       - account-manager
+      - antigravity-proxy # Added dependency
       - openclaw # CEO might use openclaw for internal communication or monitoring
     restart: unless-stopped
 

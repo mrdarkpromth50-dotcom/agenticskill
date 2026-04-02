@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { glob } from "glob";
+import { AgentPool } from "./agent-pool";
+import { ResultHandler } from "./result-handler";
 
 // --- CONFIGURATION ---
 const SPAWN_MAX_CONCURRENT = parseInt(process.env.SPAWN_MAX_CONCURRENT || "5", 10);
@@ -12,13 +14,16 @@ const SPAWN_TASK_TIMEOUT = parseInt(process.env.SPAWN_TASK_TIMEOUT || "300000", 
 
 export class SpawnManager {
   private taskQueue: TaskQueue;
-  private availableAgentConfigs: Map<string, AgentConfig> = new Map();
+  private agentPool: AgentPool;
+  private resultHandler: ResultHandler;
   private spawnedAgents: Map<string, SpawnedAgent> = new Map(); // Key: spawnedAgentId
   private taskListenerInterval: NodeJS.Timeout | null = null;
   private configDir: string;
 
-  constructor(taskQueue: TaskQueue, configDir: string) {
+  constructor(taskQueue: TaskQueue, agentPool: AgentPool, resultHandler: ResultHandler, configDir: string) {
     this.taskQueue = taskQueue;
+    this.agentPool = agentPool;
+    this.resultHandler = resultHandler;
     this.configDir = path.resolve(configDir);
     console.log(`SpawnManager initialized. Agent configs will be loaded from: ${this.configDir}`);
   }
@@ -33,14 +38,14 @@ export class SpawnManager {
         const content = await fs.readFile(file, "utf-8");
         const config: AgentConfig = JSON.parse(content);
         if (config.type === "spawn") {
-          this.availableAgentConfigs.set(config.id, config);
+          this.agentPool.registerAgentType(config.id, config);
           console.log(`Loaded spawnable agent config: ${config.name} (ID: ${config.id})`);
         }
       } catch (error) {
         console.error(`Error processing agent config file ${file}:`, error);
       }
     }
-    console.log(`Finished loading configs. ${this.availableAgentConfigs.size} spawnable agents available.`);
+    console.log(`Finished loading configs. ${this.agentPool.getAvailableTypes().length} spawnable agents available.`);
   }
 
   startTaskListener(): void {
@@ -70,10 +75,15 @@ export class SpawnManager {
       return; // No pending tasks
     }
 
-    const agentConfig = this.availableAgentConfigs.get(task.agentType);
+    const agentConfig = this.agentPool.getAgentType(task.agentType);
     if (!agentConfig) {
-      console.error(`No agent config for type '${task.agentType}'. Task ${task.id} will be marked as failed.`);
-      this.taskQueue.updateTask(task.id, { status: "failed", error: `Agent type '${task.agentType}' not found.` });
+      console.error(`No agent config for type \'${task.agentType}\'. Task ${task.id} will be marked as failed.`);
+      this.taskQueue.updateTask(task.id, { status: "failed", error: `Agent type \'${task.agentType}\' not found.` });
+      this.resultHandler.handleResult(task.id, null, "failed", `Agent type \'${task.agentType}\' not found.`);
+      if (task.requesterCallbackUrl) {
+        this.resultHandler.notifyRequester(task.requesterCallbackUrl, task.id, null, "failed", `Agent type \'${task.agentType}\' not found.`);
+      }
+      this.taskQueue.dequeue(); // Remove the failed task from the queue
       return;
     }
 
@@ -122,15 +132,36 @@ export class SpawnManager {
 
   handleTaskCompletion(taskId: string, result: any): void {
     this.taskQueue.updateTask(taskId, { status: "completed", result });
+    this.resultHandler.handleResult(taskId, result, "completed");
+    const task = this.taskQueue.getTask(taskId);
+    if (task?.requesterCallbackUrl) {
+      this.resultHandler.notifyRequester(task.requesterCallbackUrl, taskId, result, "completed");
+    }
+    this.taskQueue.dequeue(); // Remove from queue after completion
     console.log(`Task ${taskId} completed successfully.`);
   }
 
   handleTaskFailure(taskId: string, error: string): void {
     this.taskQueue.updateTask(taskId, { status: "failed", error });
+    this.resultHandler.handleResult(taskId, null, "failed", error);
+    const task = this.taskQueue.getTask(taskId);
+    if (task?.requesterCallbackUrl) {
+      this.resultHandler.notifyRequester(task.requesterCallbackUrl, taskId, null, "failed", error);
+    }
+    this.taskQueue.dequeue(); // Remove from queue after failure
     console.error(`Task ${taskId} failed: ${error}`);
   }
 
   getActiveAgents(): SpawnedAgent[] {
     return Array.from(this.spawnedAgents.values());
+  }
+
+  // Expose agent pool methods
+  registerAgentType(type: string, config: AgentConfig): void {
+    this.agentPool.registerAgentType(type, config);
+  }
+
+  getAgentPoolStats(): { totalTypes: number; types: { [key: string]: AgentConfig } } {
+    return this.agentPool.getPoolStats();
   }
 }

@@ -12,6 +12,7 @@ export interface Task {
   completedAt?: number;
   result?: any; // Result of the task upon completion
   error?: string; // Error message if task failed
+  requesterCallbackUrl?: string; // URL to notify the requester upon task completion/failure
 }
 
 export interface AgentConfig {
@@ -33,4 +34,12 @@ export interface SpawnedAgent {
   pid?: number; // Process ID if applicable
   status: 'running' | 'idle' | 'terminated' | 'error';
   spawnedAt: number;
+}
+
+export interface TaskResult {
+  taskId: string;
+  status: TaskStatus;
+  result?: any;
+  error?: string;
+  timestamp: number;
 }

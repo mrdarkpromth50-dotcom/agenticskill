@@ -1,7 +1,7 @@
 {
-  "name": "ceo-agent",
+  "name": "spawn-agents",
   "version": "1.0.0",
-  "description": "The core CEO Agent service, managing tasks, communication with Boss, and agent orchestration.",
+  "description": "Service for providing templates and running spawned agents on demand.",
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
@@ -12,10 +12,8 @@
   "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.7.2",
-    "discord.js": "^14.15.3",
     "express": "^4.19.2",
-    "telegraf": "^4.16.3",
+    "axios": "^1.6.8",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

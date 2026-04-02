@@ -1,33 +1,77 @@
+import express from 'express';
+import { json } from 'body-parser';
 import { CEOAgent } from './ceo-logic';
-import { DiscordCommunicator, TelegramCommunicator } from './communication';
-import { CEOAgentConfig } from './types';
+import { BossCommand } from './types';
 
-async function main() {
-  console.log('Starting CEO Agent Service...');
+const app = express();
+app.use(json());
 
-  // Load CEO Agent configuration (from config/agents/ceo.json)
-  const ceoConfig: CEOAgentConfig = {
-    id: 'ceo',
-    name: 'CEO Agent',
-    role: 'Chief Executive Officer',
-    type: 'persistent',
-    personality: 'Strategic, decisive, visionary, calm under pressure, results-oriented.',
-    communication_style: 'Formal, concise, directive, prioritizes clarity and actionable insights.',
-    skills: ['management_strategic_planning', 'management_task_delegation', 'management_reporting', 'management_risk_assessment', 'management_proactive_research'],
-    tools: ['telegram_cli', 'discord_cli', 'openclaw_cli', 'llm_access', 'internal_reporting_tool', 'trend_analysis_tool'],
-    system_prompt: 'You are the CEO Agent of an Agentic Company. Your primary responsibility is to oversee all operations, translate the Boss\'s high-level commands into actionable plans, and ensure the company\'s strategic objectives are met. You are the sole point of contact with the Boss. You must never ask the Boss for clarification during task execution. All decisions during a task must be made autonomously. Only report to the Boss upon task completion or to proactively propose new trends/opportunities. Your communication with the Boss is formal and concise. You manage a team of Persistent and Spawn-on-Demand Agents. Your goal is 100% autonomous task completion. Prioritize efficiency, quality, and strategic alignment. Use the Translation Layer for all external communications with LLM providers if necessary.'
-  };
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3004;
 
-  const discordCommunicator = new DiscordCommunicator(process.env.DISCORD_BOT_TOKEN!, process.env.DISCORD_GUILD_ID!);
-  const telegramCommunicator = new TelegramCommunicator(process.env.TELEGRAM_BOT_TOKEN!, process.env.TELEGRAM_CHAT_ID!);
-
-  const ceoAgent = new CEOAgent(ceoConfig, discordCommunicator, telegramCommunicator);
-  await ceoAgent.start();
-
-  console.log('CEO Agent Service started.');
-}
-
-main().catch(error => {
-  console.error('CEO Agent Service failed to start:', error);
+// --- INITIALIZATION ---
+console.log("Initializing CEO Agent Service...");
+const ceoAgent = new CEOAgent();
+ceoAgent.start().catch(error => {
+  console.error("Failed to start CEO Agent:", error);
   process.exit(1);
+});
+
+// --- API ENDPOINTS ---
+
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).send({ status: 'ok', service: 'ceo-agent' });
+});
+
+// Get CEO Agent status
+app.get('/status', (req, res) => {
+  try {
+    const status = ceoAgent.getStatus();
+    res.status(200).send(status);
+  } catch (error) {
+    console.error('[API ERROR] GET /status:', error);
+    res.status(500).send({ error: 'Internal server error while retrieving CEO status' });
+  }
+});
+
+// Get active plans
+app.get('/plans', (req, res) => {
+  try {
+    const activePlans = ceoAgent.getActivePlans();
+    res.status(200).send(activePlans);
+  } catch (error) {
+    console.error('[API ERROR] GET /plans:', error);
+    res.status(500).send({ error: 'Internal server error while retrieving active plans' });
+  }
+});
+
+// Trigger a report to the boss
+app.post('/report', async (req, res) => {
+  try {
+    await ceoAgent.triggerReport();
+    res.status(200).send({ message: 'Report triggered successfully' });
+  } catch (error) {
+    console.error('[API ERROR] POST /report:', error);
+    res.status(500).send({ error: 'Internal server error while triggering report' });
+  }
+});
+
+// Receive command from an external source (e.g., another service or a mock boss)
+app.post('/command', async (req, res) => {
+  try {
+    const { text, sender, source }: BossCommand = req.body;
+    if (!text || !sender || !source) {
+      return res.status(400).send({ error: 'Missing required fields: text, sender, source' });
+    }
+    await ceoAgent.receiveCommand({ text, sender, source });
+    res.status(202).send({ message: 'Command received and being processed' });
+  } catch (error) {
+    console.error('[API ERROR] POST /command:', error);
+    res.status(500).send({ error: 'Internal server error while processing command' });
+  }
+});
+
+// --- SERVER START ---
+app.listen(PORT, () => {
+  console.log(`CEO Agent Service is running on http://localhost:${PORT}`);
 });

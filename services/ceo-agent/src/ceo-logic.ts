@@ -1,18 +1,24 @@
-import { BossCommand, TaskPlan, SubTask, CEOStatus } from './types';
+import { BossCommand, TaskPlan, SubTask, CEOStatus, Task, ExecutionPlan } from './types';
 import { CommunicationService } from './communication';
+import { TaskPlanner } from './task-planner';
+import { ProgressTracker } from './progress-tracker';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
-const SPAWN_MANAGER_URL = process.env.SPAWN_MANAGER_URL || 'http://spawn-manager:3002';
+const SPAWN_MANAGER_URL = process.env.SPAWN_MANAGER_URL || 'http://spawn-manager:3003';
 
 export class CEOAgent {
   private communication: CommunicationService;
-  private activePlans: Map<string, TaskPlan> = new Map();
+  private taskPlanner: TaskPlanner;
+  private progressTracker: ProgressTracker;
+  private activePlans: Map<string, ExecutionPlan> = new Map(); // Changed to ExecutionPlan
   private status: 'idle' | 'busy' | 'error' = 'idle';
   private lastCommand?: string;
 
   constructor() {
     this.communication = new CommunicationService();
+    this.taskPlanner = new TaskPlanner();
+    this.progressTracker = new ProgressTracker();
   }
 
   async start(): Promise<void> {
@@ -29,14 +35,32 @@ export class CEOAgent {
     this.status = 'busy';
 
     try {
-      const plan = await this.analyzeAndPlan(command);
-      this.activePlans.set(plan.id, plan);
-      
-      await this.communication.reportToBoss(`รับทราบครับบอส! ผมได้วางแผนงานสำหรับ "${plan.overallGoal}" เรียบร้อยแล้ว โดยแบ่งเป็น ${plan.subTasks.length} งานย่อยครับ`);
-      
-      for (const task of plan.subTasks) {
-        await this.delegateTask(plan.id, task);
+      const analysis = await this.taskPlanner.analyzeCommand(command);
+      if (analysis.error) {
+        throw new Error(`Task analysis failed: ${analysis.error}`);
       }
+      const executionPlan = this.taskPlanner.createExecutionPlan(analysis);
+      const { totalTime, totalCost } = this.taskPlanner.estimateResources(executionPlan);
+
+      executionPlan.id = uuidv4(); // Assign a unique ID to the execution plan
+      executionPlan.bossCommand = command.text;
+      executionPlan.overallGoal = `Process command: ${command.text}`;
+      executionPlan.status = 'planning';
+      executionPlan.createdAt = Date.now();
+      this.activePlans.set(executionPlan.id, executionPlan);
+
+      await this.communication.reportToBoss(
+        `รับทราบครับบอส! ผมได้วางแผนงานสำหรับ "${executionPlan.overallGoal}" เรียบร้อยแล้ว โดยแบ่งเป็น ${executionPlan.tasks.length} งานย่อย\n` +
+        `ประมาณการเวลา: ${totalTime} ชั่วโมง, ประมาณการค่าใช้จ่าย: $${totalCost}\n` +
+        `กำลังเริ่มดำเนินการครับ...`
+      );
+      
+      // Track all tasks in the progress tracker
+      executionPlan.tasks.forEach(task => this.progressTracker.trackTask(task));
+
+      // Delegate tasks based on dependencies
+      await this.delegateTasksSequentially(executionPlan.id);
+
     } catch (error) {
       console.error("CEO Agent: Error processing command:", error);
       this.status = 'error';
@@ -44,83 +68,74 @@ export class CEOAgent {
     }
   }
 
-  private async analyzeAndPlan(command: BossCommand): Promise<TaskPlan> {
-    console.log("CEO Agent: Analyzing command and creating plan...");
-    // In a real scenario, this would call an LLM to break down the command.
-    const planId = uuidv4();
-    const subTasks: SubTask[] = [
-      {
-        id: uuidv4(),
-        description: `Research about: ${command.text}`,
-        assignedAgentType: 'researcher',
-        status: 'pending'
-      },
-      {
-        id: uuidv4(),
-        description: `Summarize findings for: ${command.text}`,
-        assignedAgentType: 'summarizer',
-        status: 'pending'
-      }
-    ];
-
-    return {
-      id: planId,
-      bossCommand: command.text,
-      overallGoal: `Process command: ${command.text}`,
-      subTasks,
-      status: 'planning',
-      createdAt: Date.now()
-    };
-  }
-
-  private async delegateTask(planId: string, subTask: SubTask): Promise<void> {
-    console.log(`CEO Agent: Delegating subtask ${subTask.id} to Spawn Manager...`);
-    try {
-      const response = await axios.post(`${SPAWN_MANAGER_URL}/tasks`, {
-        agentType: subTask.assignedAgentType,
-        description: subTask.description,
-        payload: { planId, subTaskId: subTask.id }
-      });
-
-      subTask.spawnTaskId = response.data.id;
-      subTask.status = 'in-progress';
-      
-      // Start tracking progress
-      this.trackProgress(planId, subTask.id);
-    } catch (error) {
-      console.error(`CEO Agent: Failed to delegate subtask ${subTask.id}:`, error);
-      subTask.status = 'failed';
-      subTask.error = 'Failed to connect to Spawn Manager';
-    }
-  }
-
-  private async trackProgress(planId: string, subTaskId: string): Promise<void> {
+  private async delegateTasksSequentially(planId: string): Promise<void> {
     const plan = this.activePlans.get(planId);
     if (!plan) return;
 
-    const subTask = plan.subTasks.find(t => t.id === subTaskId);
-    if (!subTask || !subTask.spawnTaskId) return;
+    const executableTasks = plan.tasks.filter(task => 
+      task.status === 'pending' && 
+      task.dependencies.every(depId => 
+        this.progressTracker.getTask(depId)?.status === 'completed'
+      )
+    );
+
+    for (const task of executableTasks) {
+      this.progressTracker.updateProgress(task.id, 'in-progress');
+      await this.delegateTask(planId, task);
+    }
+
+    // Check if all tasks are finished after delegation
+    await this.checkPlanCompletion(planId);
+  }
+
+  private async delegateTask(planId: string, task: Task): Promise<void> {
+    console.log(`CEO Agent: Delegating task ${task.id} (${task.description}) to Spawn Manager...`);
+    try {
+      const response = await axios.post(`${SPAWN_MANAGER_URL}/tasks`, {
+        agentType: task.agentType,
+        description: task.description,
+        payload: { planId, taskId: task.id }
+      });
+
+      task.spawnTaskId = response.data.id;
+      this.progressTracker.updateProgress(task.id, 'in-progress');
+      
+      // Start tracking progress for this specific task
+      this.trackSpawnedTaskProgress(planId, task.id);
+    } catch (error) {
+      console.error(`CEO Agent: Failed to delegate task ${task.id}:`, error);
+      this.progressTracker.updateProgress(task.id, 'failed', { error: 'Failed to connect to Spawn Manager' });
+      // Attempt to continue with other tasks or report failure
+      await this.checkPlanCompletion(planId);
+    }
+  }
+
+  private async trackSpawnedTaskProgress(planId: string, taskId: string): Promise<void> {
+    const task = this.progressTracker.getTask(taskId);
+    if (!task || !task.spawnTaskId) return;
 
     const checkInterval = setInterval(async () => {
       try {
-        const response = await axios.get(`${SPAWN_MANAGER_URL}/tasks/${subTask.spawnTaskId}`);
+        const response = await axios.get(`${SPAWN_MANAGER_URL}/tasks/${task.spawnTaskId}`);
         const taskData = response.data;
 
         if (taskData.status === 'completed') {
           clearInterval(checkInterval);
-          subTask.status = 'completed';
-          subTask.result = taskData.result;
-          console.log(`CEO Agent: Subtask ${subTaskId} completed.`);
-          await this.checkPlanCompletion(planId);
-        } else if (taskData.status === 'failed') {
+          this.progressTracker.updateProgress(taskId, 'completed', taskData.result);
+          console.log(`CEO Agent: Task ${taskId} completed.`);
+          await this.delegateTasksSequentially(planId); // Try to delegate next tasks
+        } else if (taskData.status === 'failed' || taskData.status === 'cancelled') {
           clearInterval(checkInterval);
-          subTask.status = 'failed';
-          subTask.error = taskData.error;
-          console.error(`CEO Agent: Subtask ${subTaskId} failed.`);
-          await this.checkPlanCompletion(planId);
+          this.progressTracker.updateProgress(taskId, taskData.status, taskData.error);
+          console.error(`CEO Agent: Task ${taskId} ${taskData.status}.`);
+          await this.checkPlanCompletion(planId); // Check plan completion on failure
         }
       } catch (error) {
-        console.error(`CEO Agent: Error tracking subtask ${subTaskId}:`, error);
+        console.error(`CEO Agent: Error tracking spawned task ${taskId}:`, error);
+        // If tracking fails, mark task as failed to prevent infinite loop
+        clearInterval(checkInterval);
+        this.progressTracker.updateProgress(taskId, 'failed', { error: 'Failed to track progress from Spawn Manager' });
+        await this.checkPlanCompletion(planId);
       }
     }, 10000); // Check every 10 seconds
   }
@@ -129,12 +144,13 @@ export class CEOAgent {
     const plan = this.activePlans.get(planId);
     if (!plan) return;
 
-    const allFinished = plan.subTasks.every(t => t.status === 'completed' || t.status === 'failed');
-    if (allFinished) {
-      plan.status = plan.subTasks.every(t => t.status === 'completed') ? 'completed' : 'failed';
+    const overallProgress = this.progressTracker.getOverallProgress();
+
+    if (overallProgress.overallStatus === 'completed' || overallProgress.overallStatus === 'failed') {
+      plan.status = overallProgress.overallStatus;
       plan.completedAt = Date.now();
       
-      const report = this.consolidateResults(plan);
+      const report = this.consolidateResults(plan.id);
       await this.communication.reportToBoss(report);
       
       this.activePlans.delete(planId);
@@ -142,11 +158,17 @@ export class CEOAgent {
     }
   }
 
-  private consolidateResults(plan: TaskPlan): string {
+  private consolidateResults(planId: string): string {
+    const plan = this.activePlans.get(planId);
+    if (!plan) return "รายงานไม่พบแผนงานนี้";
+
+    const tasks = this.progressTracker.getAllTasks();
     let report = `บอสครับ! งานสำหรับ "${plan.bossCommand}" เสร็จสิ้นแล้วครับ\n\n`;
-    plan.subTasks.forEach((t, i) => {
-      report += `${i + 1}. ${t.description}: ${t.status === 'completed' ? '✅ สำเร็จ' : '❌ ล้มเหลว (' + t.error + ')'}\n`;
+    tasks.forEach((t, i) => {
+      report += `${i + 1}. ${t.description}: ${t.status === 'completed' ? '✅ สำเร็จ' : '❌ ล้มเหลว (' + (t.result?.error || 'ไม่ทราบสาเหตุ') + ')'}\n`;
     });
+    report += `\nสถานะโดยรวม: ${plan.status === 'completed' ? '✅ สำเร็จ' : '❌ ล้มเหลว'}\n`;
+    report += `\n${this.progressTracker.generateReport()}`;
     return report;
   }
 
@@ -159,17 +181,19 @@ export class CEOAgent {
     return {
       status: this.status,
       activePlans: this.activePlans.size,
-      lastCommand: this.lastCommand
+      lastCommand: this.lastCommand,
+      overallProgress: this.progressTracker.getOverallProgress()
     };
   }
 
-  getActiveTasks(): TaskPlan[] {
+  getActivePlans(): ExecutionPlan[] {
     return Array.from(this.activePlans.values());
   }
 
   async triggerReport(): Promise<void> {
     const status = this.getStatus();
-    let report = `รายงานสถานะ CEO Agent:\n- สถานะ: ${status.status}\n- งานที่กำลังดำเนินการ: ${status.activePlans}\n- คำสั่งล่าสุด: ${status.lastCommand || 'ไม่มี'}`;
+    let report = `รายงานสถานะ CEO Agent:\n- สถานะ: ${status.status}\n- งานที่กำลังดำเนินการ: ${status.activePlans}\n- คำสั่งล่าสุด: ${status.lastCommand || 'ไม่มี'}\n\n`;
+    report += this.progressTracker.generateReport();
     await this.communication.reportToBoss(report);
   }
 }

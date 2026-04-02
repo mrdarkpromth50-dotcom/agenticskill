@@ -26,3 +26,25 @@ export interface SearchResult {
   metadata: any;
   distance: number;
 }
+
+export interface MemoryRecord {
+  id: string;
+  document: string;
+  metadata: Record<string, any>;
+  embedding?: number[];
+  timestamp: number;
+}
+
+export interface SharedMemoryMessage {
+  channel: string;
+  message: string;
+  timestamp: number;
+  senderId?: string;
+}
+
+export interface SharedMemoryState {
+  key: string;
+  value: string;
+  timestamp: number;
+  lastUpdatedBy?: string;
+}
