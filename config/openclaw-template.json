@@ -3,23 +3,40 @@
     "mode": "merge",
     "providers": {
       "antigravity-proxy": {
-        "baseUrl": "http://127.0.0.1:8080",
-        "apiKey": "test",
+        "baseUrl": "http://192.168.80.1:8080",
+        "apiKey": "proxy-key",
         "api": "anthropic-messages",
         "models": [
-          {
-            "id": "gemini-3-pro-high",
-            "name": "Gemini 3 Pro High",
-            "reasoning": true,
-            "contextWindow": 1048576
-          },
-          {
-            "id": "opus-4-6-think",
-            "name": "Opus 4.6 Think",
-            "reasoning": true,
-            "contextWindow": 200000
-          }
+          {"id": "gemini-3.1-pro-high", "name": "Gemini 3.1 Pro (High)", "reasoning": true, "contextWindow": 1048576},
+          {"id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 (Thinking)", "reasoning": true, "contextWindow": 200000},
+          {"id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro", "reasoning": true, "contextWindow": 1048576},
+          {"id": "gemini-3.1-pro-low", "name": "Gemini 3.1 Pro (Low)", "contextWindow": 1048576},
+          {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "contextWindow": 200000},
+          {"id": "gemini-3-pro-high", "name": "Gemini 3 Pro (High)", "reasoning": true, "contextWindow": 1048576},
+          {"id": "gemini-3-pro-low", "name": "Gemini 3 Pro (Low)", "contextWindow": 1048576},
+          {"id": "gemini-3-flash", "name": "Gemini 3 Flash", "contextWindow": 1048576},
+          {"id": "gemini-3-flash-agent", "name": "Gemini 3 Flash Agent", "contextWindow": 1048576},
+          {"id": "gemini-3.1-flash-image", "name": "Gemini 3.1 Flash Image", "contextWindow": 1048576},
+          {"id": "gemini-3.1-flash-lite", "name": "Gemini 3.1 Flash Lite", "contextWindow": 1048576},
+          {"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash", "contextWindow": 1048576},
+          {"id": "gemini-2.5-flash-thinking", "name": "Gemini 2.5 Flash Thinking", "reasoning": true, "contextWindow": 1048576},
+          {"id": "gemini-2.5-flash-lite", "name": "Gemini 2.5 Flash Lite", "contextWindow": 1048576}
         ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "antigravity-proxy/gemini-3.1-pro-high"
+      },
+      "models": {
+        "antigravity-proxy/gemini-3.1-pro-high": {},
+        "antigravity-proxy/claude-opus-4-6-thinking": {},
+        "antigravity-proxy/gemini-2.5-pro": {},
+        "antigravity-proxy/gemini-3.1-pro-low": {},
+        "antigravity-proxy/claude-sonnet-4-6": {},
+        "antigravity-proxy/gemini-3-pro-high": {}
       }
     }
   },
