@@ -25,7 +25,7 @@ export class StrategistAgent extends BaseSpawnAgent {
       await this.complete({ marketAnalysis, strategyDocument, presentationOutline }, 'completed');
       return { success: true, output: strategyDocument };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? (error as any).message : String(error);
       console.error(`[${this.config.name} Agent ${this.id}] Strategist task failed: ${errorMessage}`);
       await this.complete(null, 'failed', errorMessage);
       return { success: false, error: errorMessage };

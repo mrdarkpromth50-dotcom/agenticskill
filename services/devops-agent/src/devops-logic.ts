@@ -145,9 +145,9 @@ export class DevOpsAgent {
         agentId: 'devops-agent',
         data: data,
         embedding: JSON.stringify(data), // Simple embedding for now
-        metadata: { type: dataType, id: data.id, timestamp: Date.now() },
+        metadata: { type: dataType, id: (data as any).id, timestamp: Date.now() },
       });
-      console.log(`DevOps Agent: Saved ${dataType} ${data.id} to long-term memory.`);
+      console.log(`DevOps Agent: Saved ${dataType} ${(data as any).id} to long-term memory.`);
     } catch (error) {
       console.error(`DevOps Agent: Failed to save data to memory:`, error);
     }

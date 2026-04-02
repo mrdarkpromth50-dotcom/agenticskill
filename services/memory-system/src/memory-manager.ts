@@ -70,6 +70,10 @@ export class MemoryManager {
     }
   }
 
+  getVectorDBClient(): VectorDBClient {
+    return this.vectorDBClient;
+  }
+
   async searchLongTermMemory(data: LongTermMemorySearchRequest): Promise<SearchResult[]> {
     const { agentId, queryEmbedding, nResults, where } = data;
     try {

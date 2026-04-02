@@ -1,3 +1,4 @@
+import * as os from 'os';
 import ejs from 'ejs';
 import { ServiceMetric, SystemMetric } from './metrics-collector';
 import { Alert } from './alerting';

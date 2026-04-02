@@ -64,7 +64,7 @@ Key Achievements: ${keyAchievements}`;
       return report;
     } catch (error) {
       console.error('[DailyReportGenerator] Error generating report:', error);
-      throw new Error(`Failed to generate daily report: ${error.message}`);
+      throw new Error(`Failed to generate daily report: ${(error as any).message}`);
     }
   }
 
@@ -88,7 +88,7 @@ Key Achievements: ${keyAchievements}`;
       }
     } catch (error) {
       console.error(`[DailyReportGenerator] Error sending report to ${channel}:`, error);
-      throw new Error(`Failed to send report to ${channel}: ${error.message}`);
+      throw new Error(`Failed to send report to ${channel}: ${(error as any).message}`);
     }
   }
 }

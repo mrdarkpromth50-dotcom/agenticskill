@@ -15,8 +15,8 @@ export class PipelineManager {
   public async createPipeline(config: PipelineConfig): Promise<PipelineConfig> {
     console.log(`Pipeline Manager: Creating new pipeline: ${config.name}`);
     const newPipeline: PipelineConfig = {
-      id: uuidv4(),
       ...config,
+      id: config.id || uuidv4(),
     };
     this.pipelines.set(newPipeline.id, newPipeline);
     await this.saveToMemory(newPipeline);
@@ -72,11 +72,11 @@ export class PipelineManager {
         agentId: 'devops-agent',
         data: data,
         embedding: JSON.stringify(data), // Simple embedding for now
-        metadata: { type: dataType, id: data.id, timestamp: Date.now() },
+        metadata: { type: 'unknown', id: data.id, timestamp: Date.now() },
       });
-      console.log(`DevOps Agent: Saved ${dataType} ${data.id} to long-term memory.`);
+      console.log(`DevOps Agent: Saved ${'unknown'} ${data.id} to long-term memory.`);
     } catch (error) {
-      console.error(`DevOps Agent: Failed to save ${dataType} to memory:`, error);
+      console.error(`DevOps Agent: Failed to save ${'unknown'} to memory:`, error);
     }
   }
 }

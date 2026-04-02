@@ -6,8 +6,8 @@ const ANTIGRAVITY_PROXY_URL = process.env.ANTIGRAVITY_PROXY_URL || 'http://antig
 const SPAWN_MANAGER_URL = process.env.SPAWN_MANAGER_URL || 'http://spawn-manager:3003';
 
 export abstract class BaseSpawnAgent {
-  protected id: string;
-  protected config: SpawnAgentConfig;
+  public id: string;
+  public config: SpawnAgentConfig;
   protected taskId: string;
   protected taskPayload: TaskPayload;
 
@@ -45,7 +45,7 @@ export abstract class BaseSpawnAgent {
           console.error(`Status: ${axiosError.response.status}, Data: ${JSON.stringify(axiosError.response.data)}`);
           // If it's a client error (4xx) other than 429, or a non-retryable server error, rethrow immediately
           if (axiosError.response.status >= 400 && axiosError.response.status < 500 && axiosError.response.status !== 429) {
-            throw new Error(`LLM Proxy returned client error: ${axiosError.response.status} - ${axiosError.response.data.error || axiosError.message}`);
+            throw new Error(`LLM Proxy returned client error: ${axiosError.response.status} - ${(axiosError.response.data as any)?.error || axiosError.message}`);
           }
         }
 

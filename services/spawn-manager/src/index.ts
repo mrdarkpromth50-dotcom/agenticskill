@@ -54,7 +54,7 @@ app.post('/tasks', (req, res, next) => {
     if (!agentType || !description) {
       return res.status(400).send({ error: 'Missing required fields: agentType, description' });
     }
-    const newTask = taskQueue.enqueue(agentType, description, payload || {}, requesterCallbackUrl);
+    const newTask = taskQueue.enqueue(agentType, description, { ...payload, requesterCallbackUrl });
     res.status(201).send(newTask);
   } catch (error) {
     next(error);

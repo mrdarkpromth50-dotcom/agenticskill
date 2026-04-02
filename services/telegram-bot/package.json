@@ -1,25 +1,20 @@
 {
-  "name": "spawn-agents",
+  "name": "telegram-bot",
   "version": "1.0.0",
-  "description": "Service for providing templates and running spawned agents on demand.",
+  "description": "Telegram Bot service for AgenticSkill - connects to Telegram and forwards commands to CEO Agent",
   "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node index.ts",
     "build": "tsc",
     "serve": "node dist/index.js"
   },
-  "keywords": [],
   "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
-    "@agenticskill/resilience": "^1.0.0",
-    "@agenticskill/security": "^1.0.0",
-    "axios": "^1.6.8",
-    "express": "^4.19.2",
-    "uuid": "^9.0.1"
+    "axios": "^1.7.2",
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^10.0.0",

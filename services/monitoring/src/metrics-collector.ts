@@ -1,7 +1,7 @@
 import axios from 'axios';
 import os from 'os';
 
-interface ServiceMetric {
+export interface ServiceMetric {
   serviceName: string;
   status: 'up' | 'down' | 'unknown';
   lastCheck: number;
@@ -9,7 +9,7 @@ interface ServiceMetric {
   error?: string;
 }
 
-interface SystemMetric {
+export interface SystemMetric {
   cpuUsage: os.CpuInfo[];
   memoryUsage: NodeJS.MemoryUsage;
   uptime: number;

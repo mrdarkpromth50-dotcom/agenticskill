@@ -1,3 +1,4 @@
+import * as os from 'os';
 import axios from 'axios';
 import { ServiceMetric, SystemMetric } from './metrics-collector';
 
@@ -79,8 +80,8 @@ export class AlertManager {
         });
       }
       // Basic CPU check (more advanced would involve calculating average over time)
-      const totalIdle = metrics.system.cpuUsage.map(cpu => cpu.times.idle).reduce((acc, val) => acc + val, 0);
-      const totalTick = metrics.system.cpuUsage.map(cpu => cpu.times.user + cpu.times.nice + cpu.times.sys + cpu.times.idle + cpu.times.irq).reduce((acc, val) => acc + val, 0);
+      const totalIdle = metrics.system.cpuUsage.map(cpu => cpu.times.idle).reduce((acc: number, val: number) => acc + val, 0);
+      const totalTick = metrics.system.cpuUsage.map(cpu => cpu.times.user + cpu.times.nice + cpu.times.sys + cpu.times.idle + cpu.times.irq).reduce((acc: number, val: number) => acc + val, 0);
       const cpuUsage = 100 - (100 * totalIdle / totalTick);
 
       if (this.thresholds.cpuUsageHigh && cpuUsage > this.thresholds.cpuUsageHigh) {

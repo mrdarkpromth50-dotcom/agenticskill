@@ -135,11 +135,11 @@ Output in JSON format: { "campaignSummaries": [], "marketInsights": [], "recomme
         agentId: 'cmo-agent',
         data: data,
         embedding: JSON.stringify(data), // Simple embedding for now
-        metadata: { type: dataType, id: data.id || uuidv4(), timestamp: Date.now() },
+        metadata: { type: 'unknown', id: (data as any).id || uuidv4(), timestamp: Date.now() },
       });
-      console.log(`CMO Agent: Saved ${dataType} to long-term memory.`);
+      console.log(`CMO Agent: Saved ${'unknown'} to long-term memory.`);
     } catch (error) {
-      console.error(`CMO Agent: Failed to save ${dataType} to memory:`, error);
+      console.error(`CMO Agent: Failed to save ${'unknown'} to memory:`, error);
     }
   }
 

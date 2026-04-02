@@ -1,4 +1,5 @@
 import { TaskResult, TaskStatus } from './types';
+// @ts-ignore
 import axios from 'axios';
 
 export class ResultHandler {

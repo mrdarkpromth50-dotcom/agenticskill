@@ -128,7 +128,7 @@ Output in JSON format: { "risks": [] }`,
       competitorInsights,
       recommendations: ['Review market positioning based on latest competitor analysis.', 'Prioritize strategic goal X.'],
     };
-    await this.strategyEngine.saveToMemory(report);
+    await this.strategyEngine.saveToMemory(report as any);
     console.log('CSO Agent: Strategy report generated and saved.');
     return report;
   }
@@ -137,8 +137,8 @@ Output in JSON format: { "risks": [] }`,
     return Array.from(this.activePlans.values());
   }
 
-  public getCompetitors(): CompetitorAnalysis[] {
-    return this.getCompetitorInsightsFromMemory();
+  public async getCompetitors(): Promise<CompetitorAnalysis[]> {
+    return await this.getCompetitorInsightsFromMemory();
   }
 
   private async getCompetitorInsightsFromMemory(): Promise<CompetitorAnalysis[]> {

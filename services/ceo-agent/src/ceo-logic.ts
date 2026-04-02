@@ -1,4 +1,4 @@
-import { BossCommand, Task, ExecutionPlan, TrendItem, Proposal, DailyReport } from './types';
+import { BossCommand, Task, ExecutionPlan, Proposal, DailyReport, ProgressReport, CEOStatus, TrendItem } from './types';
 import { CommunicationService } from './communication';
 import { TaskPlanner } from './task-planner';
 import { ProgressTracker } from './progress-tracker';
@@ -100,7 +100,7 @@ export class CEOAgent {
     } catch (error) {
       console.error("CEO Agent: Error processing command:", error);
       this.status = 'error';
-      await this.communication.reportToBoss(`ขออภัยครับบอส เกิดข้อผิดพลาดในการประมวลผลคำสั่ง: ${error instanceof Error ? error.message : String(error)}`);
+      await this.communication.reportToBoss(`ขออภัยครับบอส เกิดข้อผิดพลาดในการประมวลผลคำสั่ง: ${error instanceof Error ? (error as any).message : String(error)}`);
     }
   }
 
@@ -233,6 +233,10 @@ export class CEOAgent {
 
   public getLatestReport(): DailyReport | undefined {
     return this.latestDailyReport;
+  }
+
+  async getStoredProposals(): Promise<Proposal[]> {
+    return this.trendResearchEngine.getStoredProposals();
   }
 
   getStatus(): CEOStatus {

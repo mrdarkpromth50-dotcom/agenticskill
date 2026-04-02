@@ -112,7 +112,7 @@ export class PersistentAgentManager {
     agent.status = "restarting";
     
     // Stop the agent first, regardless of its current state (unless already stopping)
-    if (agent.status !== 'stopping' && agent.status !== 'stopped') {
+    if ((agent.status as string) !== 'stopping' && (agent.status as string) !== 'stopped') {
         await this.stopAgent(agentId);
     }
 

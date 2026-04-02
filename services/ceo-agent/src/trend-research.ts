@@ -54,7 +54,7 @@ export class TrendResearchEngine {
       return proposal;
     } catch (error) {
       console.error(`[TrendResearchEngine] Error creating proposal for '${trend.title}':`, error);
-      throw new Error(`Failed to create proposal: ${error.message}`);
+      throw new Error(`Failed to create proposal: ${(error as any).message}`);
     }
   }
 
@@ -70,7 +70,7 @@ export class TrendResearchEngine {
       console.log(`[TrendResearchEngine] Proposal '${proposal.title}' saved to memory.`);
     } catch (error) {
       console.error(`[TrendResearchEngine] Error saving proposal '${proposal.title}' to memory:`, error);
-      throw new Error(`Failed to save proposal to memory: ${error.message}`);
+      throw new Error(`Failed to save proposal to memory: ${(error as any).message}`);
     }
   }
 

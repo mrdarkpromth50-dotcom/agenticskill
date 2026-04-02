@@ -1,4 +1,5 @@
 export interface SystemError {
+  errorId?: string;
   id: string;
   service: string;
   message: string;

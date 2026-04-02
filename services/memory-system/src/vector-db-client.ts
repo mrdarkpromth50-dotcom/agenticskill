@@ -81,7 +81,7 @@ export class VectorDBClient {
         id: results.ids[0][index],
         document: doc,
         metadata: results.metadatas[0][index],
-        distance: results.distances[0][index],
+        distance: results.distances ? results.distances[0][index] : 0,
       }));
     } catch (error) {
       console.error(`Failed to search documents for agent ${agentId}:`, error);

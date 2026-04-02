@@ -1,3 +1,4 @@
+type LLMProviderType = string;
 import { LLMProviderConfig, LLMRequest, LLMResponse, ChatRequest, ChatResponse, FallbackStrategy } from './types';
 import { ProviderManager } from './provider-manager';
 import { AccountPool } from './account-pool';

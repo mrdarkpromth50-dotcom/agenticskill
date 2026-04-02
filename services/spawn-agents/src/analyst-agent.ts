@@ -29,7 +29,7 @@ export class AnalystAgent extends BaseSpawnAgent {
       await this.complete({ dataCollectionPlan, analysisReport, visualizationsDescription, summary }, 'completed');
       return { success: true, output: summary };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? (error as any).message : String(error);
       console.error(`[${this.config.name} Agent ${this.id}] Data analysis task failed: ${errorMessage}`);
       await this.complete(null, 'failed', errorMessage);
       return { success: false, error: errorMessage };

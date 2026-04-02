@@ -3,6 +3,7 @@ import { AgentConfig, Task, SpawnedAgent, TaskStatus } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs/promises";
 import * as path from "path";
+// @ts-ignore
 import { glob } from "glob";
 import { AgentPool } from "./agent-pool";
 import { ResultHandler } from "./result-handler";

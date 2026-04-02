@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { CEOAgentCommand, Task, ExecutionPlan } from './types';
+import { BossCommand, Task, ExecutionPlan } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 const ANTIGRAVITY_PROXY_URL = process.env.ANTIGRAVITY_PROXY_URL || 'http://antigravity-proxy:8080';
 
@@ -8,8 +9,8 @@ export class TaskPlanner {
     console.log(`TaskPlanner initialized. Using Antigravity Proxy at: ${ANTIGRAVITY_PROXY_URL}`);
   }
 
-  async analyzeCommand(command: CEOAgentCommand): Promise<any> {
-    console.log(`Analyzing command: ${command.commandText}`);
+  async analyzeCommand(command: BossCommand): Promise<any> {
+    console.log(`Analyzing command: ${command.text}`);
     const prompt = `You are a highly intelligent AI assistant. Analyze the following command from the CEO and break it down into a detailed plan of subtasks. For each subtask, identify:
 - a clear, concise description of the subtask
 - the required agent type (e.g., 'developer', 'researcher', 'designer', 'copywriter')
@@ -37,7 +38,7 @@ Return the plan as a JSON array of objects. Example:
   }
 ]
 
-CEO Command: ${command.commandText}
+CEO Command: ${command.text}
 
 JSON Plan:`;
 
@@ -62,8 +63,8 @@ JSON Plan:`;
       }
 
     } catch (error) {
-      console.error("Error communicating with Antigravity Proxy for analysis:", error);
-      return { error: "Failed to get analysis from LLM", details: error.message };
+      console.error("Error communicating with Antigravity Proxy for analysis:", (error as any).message);
+      return { error: "Failed to get analysis from LLM", details: (error as any).message };
     }
   }
 
@@ -83,7 +84,14 @@ JSON Plan:`;
       endTime: undefined,
     }));
 
-    return { tasks };
+    return {
+      id: uuidv4(),
+      bossCommand: 'auto-generated',
+      overallGoal: 'Execute plan from analysis',
+      tasks,
+      status: 'planning' as const,
+      createdAt: Date.now(),
+    };
   }
 
   estimateResources(plan: ExecutionPlan): { totalTime: number; totalCost: number } {

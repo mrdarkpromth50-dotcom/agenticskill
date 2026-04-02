@@ -52,8 +52,7 @@ app.post('/accounts', (req, res, next) => {
       id: uuidv4(),
       type,
       apiKey,
-      usageCount: 0,
-      lastUsed: 0
+      // usageCount and lastUsed are auto-set by rotation
     });
     res.status(201).send(newAccount);
   } catch (error) {

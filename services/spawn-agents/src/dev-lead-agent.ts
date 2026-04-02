@@ -25,7 +25,7 @@ export class DevLeadAgent extends BaseSpawnAgent {
       await this.complete({ projectAnalysis, taskDistribution, integrationPlan }, 'completed');
       return { success: true, output: integrationPlan };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? (error as any).message : String(error);
       console.error(`[${this.config.name} Agent ${this.id}] Development lead task failed: ${errorMessage}`);
       await this.complete(null, 'failed', errorMessage);
       return { success: false, error: errorMessage };
