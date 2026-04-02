@@ -40,7 +40,7 @@ services:
   # Agent Town UI
   agent-town:
     image: node:20-slim
-    container_name: agent-town-ui
+    container_name: agentic-agent-town-ui
     ports:
       - "3000:3000"
     environment:
@@ -76,34 +76,36 @@ services:
       - agentic-network
     restart: unless-stopped
 
-  # Discord Bot Service
-  discord-bot:
-    build:
-      context: ../services/discord-bot
-      dockerfile: Dockerfile
-    container_name: agentic-discord-bot
-    environment:
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+  # Ollama for local LLM (optional, for translation layer or other LLM services)
+  ollama:
+    image: ollama/ollama
+    container_name: agentic-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
     networks:
       - agentic-network
-    depends_on:
-      - openclaw
     restart: unless-stopped
 
-  # Telegram Bot Service
-  telegram-bot:
+  # Memory System Service
+  memory-system:
     build:
-      context: ../services/telegram-bot
+      context: ../services/memory-system
       dockerfile: Dockerfile
-    container_name: agentic-telegram-bot
+    container_name: agentic-memory-system
+    ports:
+      - "3001:3001"
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - REDIS_URL=${REDIS_URL}
+      - VECTOR_DB_URL=${VECTOR_DB_URL}
+      - VECTOR_DB_TYPE=${VECTOR_DB_TYPE}
+      - PORT=${MEMORY_SYSTEM_PORT}
     networks:
       - agentic-network
     depends_on:
-      - openclaw
+      - redis
+      - chromadb
     restart: unless-stopped
 
   # Persistent Agent Layer Service
@@ -112,9 +114,12 @@ services:
       context: ../services/persistent-agent-layer
       dockerfile: Dockerfile
     container_name: agentic-persistent-agent-layer
+    ports:
+      - "3002:3002"
     environment:
       - PERSISTENT_AGENT_HEARTBEAT_INTERVAL=${PERSISTENT_AGENT_HEARTBEAT_INTERVAL}
       - PERSISTENT_AGENT_AUTO_RESTART=${PERSISTENT_AGENT_AUTO_RESTART}
+      - PORT=${PERSISTENT_AGENT_LAYER_PORT}
     networks:
       - agentic-network
     depends_on:
@@ -129,54 +134,19 @@ services:
       context: ../services/spawn-manager
       dockerfile: Dockerfile
     container_name: agentic-spawn-manager
+    ports:
+      - "3003:3003"
     environment:
       - SPAWN_MAX_CONCURRENT=${SPAWN_MAX_CONCURRENT}
       - SPAWN_TASK_TIMEOUT=${SPAWN_TASK_TIMEOUT}
+      - AGENT_CONFIG_DIR=/app/config/agents # Assuming config is mounted or copied
+      - PORT=${SPAWN_MANAGER_PORT}
     networks:
       - agentic-network
     depends_on:
       - redis
+      - chromadb # If agent configs are loaded from memory system
       - openclaw
-    restart: unless-stopped
-
-  # Memory System Service
-  memory-system:
-    build:
-      context: ../services/memory-system
-      dockerfile: Dockerfile
-    container_name: agentic-memory-system
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - VECTOR_DB_URL=http://chromadb:8000
-      - VECTOR_DB_TYPE=chromadb
-    networks:
-      - agentic-network
-    depends_on:
-      - redis
-      - chromadb
-    restart: unless-stopped
-
-  # CEO Agent Service
-  ceo-agent:
-    build:
-      context: ../services/ceo-agent
-      dockerfile: Dockerfile
-    container_name: agentic-ceo-agent
-    environment:
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-      # Add other necessary environment variables for CEO Agent
-    networks:
-      - agentic-network
-    depends_on:
-      - persistent-agent-layer
-      - spawn-manager
-      - memory-system
-      - translation-layer
-      - discord-bot
-      - telegram-bot
     restart: unless-stopped
 
   # Translation Layer Service
@@ -185,32 +155,98 @@ services:
       context: ../services/translation-layer
       dockerfile: Dockerfile
     container_name: agentic-translation-layer
+    ports:
+      - "3005:3005"
     environment:
-      - TRANSLATION_MODE=${TRANSLATION_MODE}
+      - TRANSLATION_API_URL=${TRANSLATION_API_URL}
       - TRANSLATION_MODEL=${TRANSLATION_MODEL}
-      # Add API keys for translation services if mode is 'api'
+      - PORT=${TRANSLATION_LAYER_PORT}
     networks:
       - agentic-network
+    depends_on:
+      - ollama # If using Ollama for translation
     restart: unless-stopped
 
-  # LLM Account Manager Service
+  # Account Manager Service
   account-manager:
     build:
       context: ../services/account-manager
       dockerfile: Dockerfile
     container_name: agentic-account-manager
+    ports:
+      - "3006:3006"
     environment:
-      - LLM_ACCOUNTS=${LLM_ACCOUNTS}
       - ACCOUNT_ROTATION_INTERVAL=${ACCOUNT_ROTATION_INTERVAL}
       - LLM_ACCOUNT_HEALTH_CHECK_INTERVAL=${LLM_ACCOUNT_HEALTH_CHECK_INTERVAL}
-      # Add any other environment variables needed for account management
+      - PORT=${ACCOUNT_MANAGER_PORT}
     networks:
       - agentic-network
+    restart: unless-stopped
+
+  # CEO Agent Service
+  ceo-agent:
+    build:
+      context: ../services/ceo-agent
+      dockerfile: Dockerfile
+    container_name: agentic-ceo-agent
+    ports:
+      - "3004:3004"
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - MEMORY_SYSTEM_URL=${MEMORY_SYSTEM_URL}
+      - SPAWN_MANAGER_URL=${SPAWN_MANAGER_URL}
+      - TRANSLATION_LAYER_URL=${TRANSLATION_LAYER_URL}
+      - ACCOUNT_MANAGER_URL=${ACCOUNT_MANAGER_URL}
+      - PORT=${CEO_AGENT_PORT}
+    networks:
+      - agentic-network
+    depends_on:
+      - memory-system
+      - persistent-agent-layer
+      - spawn-manager
+      - translation-layer
+      - account-manager
+      - openclaw # CEO might use openclaw for internal communication or monitoring
+    restart: unless-stopped
+
+  # Discord Bot Service (existing)
+  discord-bot:
+    build:
+      context: ../services/discord-bot
+      dockerfile: Dockerfile
+    container_name: agentic-discord-bot
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+    networks:
+      - agentic-network
+    depends_on:
+      - openclaw
+    restart: unless-stopped
+
+  # Telegram Bot Service (existing)
+  telegram-bot:
+    build:
+      context: ../services/telegram-bot
+      dockerfile: Dockerfile
+    container_name: agentic-telegram-bot
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    networks:
+      - agentic-network
+    depends_on:
+      - openclaw
     restart: unless-stopped
 
 volumes:
   antigravity-data:
   openclaw-data:
+  ollama_data:
 
 networks:
   agentic-network:

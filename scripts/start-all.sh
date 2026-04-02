@@ -1,57 +1,35 @@
 #!/bin/bash
-# Start all services
 
-echo "🚀 Starting all services..."
-echo ""
+# Start all services using Docker Compose
+echo "🚀 Starting all Agentic Company services..."
 
-# Function to check if process is running
-check_service() {
-    if nc -z 127.0.0.1 $1 2>/dev/null; then
-        return 0
-    else
-        return 1
-    fi
-}
+# Ensure we are in the root directory
+cd "$(dirname "$0")/.."
 
-# Start Antigravity Claude Proxy
-echo "1️⃣  Starting Antigravity Claude Proxy (port 8080)..."
-antigravity-claude-proxy start &
-PROXY_PID=$!
-sleep 3
-
-# Check if proxy started
-if check_service 8080; then
-    echo "✅ Antigravity Claude Proxy started (PID: $PROXY_PID)"
-else
-    echo "⚠️  Waiting for Antigravity proxy to be ready..."
-    sleep 5
+# Check if .env file exists in docker/
+if [ ! -f "./docker/.env" ]; then
+  echo "⚠️  WARNING: .env file not found in ./docker/. Copying .env.example..."
+  cp ./docker/.env.example ./docker/.env
+  echo "👉 Please edit ./docker/.env with your actual configurations (tokens, keys, etc.)"
 fi
 
-echo ""
-echo "2️⃣  Starting OpenClaw Gateway (port 18789)..."
-openclaw gateway --port 18789 &
-OPENCLAW_PID=$!
-sleep 3
-
-echo "✅ OpenClaw Gateway started (PID: $OPENCLAW_PID)"
+# Run docker compose
+docker compose -f docker/docker-compose.yml --env-file ./docker/.env up --build -d
 
 echo ""
-echo "3️⃣  Starting Agent Town (port 3000)..."
-echo "   Command: npx @geezerrrr/agent-town --port 3000 --gateway ws://127.0.0.1:18789/"
-echo ""
-echo "Run in a new terminal:"
-echo "   npm run start:agent-town"
-echo ""
 echo "───────────────────────────────────────────────────────────"
-echo "✅ Services Starting:"
+echo "✅ Services Started in Detached Mode"
 echo "───────────────────────────────────────────────────────────"
-echo "📍 Antigravity Proxy Dashboard: http://localhost:8080"
+echo "📍 Memory System: http://localhost:3001"
+echo "📍 Persistent Agent Layer: http://localhost:3002"
+echo "📍 Spawn Manager: http://localhost:3003"
+echo "📍 CEO Agent: http://localhost:3004"
+echo "📍 Translation Layer: http://localhost:3005"
+echo "📍 Account Manager: http://localhost:3006"
+echo "📍 Agent Town UI: http://localhost:3000"
 echo "📍 OpenClaw Gateway: ws://localhost:18789"
-echo "📍 Agent Town: http://localhost:3000 (run in another terminal)"
-echo ""
-echo "To stop all services: npm run stop:all"
-echo "To check status: npm run status"
+echo "📍 Antigravity Proxy: http://localhost:8080"
 echo "───────────────────────────────────────────────────────────"
-
-# Keep processes running
-wait
+echo "To check status: ./scripts/health-check.sh"
+echo "To stop all: ./scripts/stop-all.sh"
+echo "───────────────────────────────────────────────────────────"

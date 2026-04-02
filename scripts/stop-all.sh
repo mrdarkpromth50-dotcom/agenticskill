@@ -1,18 +1,12 @@
 #!/bin/bash
-# Stop all services
 
-echo "🛑 Stopping all services..."
+# Stop all services using Docker Compose
+echo "🛑 Stopping all Agentic Company services..."
 
-# Stop Antigravity Claude Proxy
-echo "Stopping Antigravity Claude Proxy..."
-antigravity-claude-proxy stop 2>/dev/null || pkill -f "antigravity-claude-proxy" 2>/dev/null
+# Ensure we are in the root directory
+cd "$(dirname "$0")/.."
 
-# Stop OpenClaw
-echo "Stopping OpenClaw..."
-pkill -f "openclaw gateway" 2>/dev/null
+# Run docker compose down
+docker compose -f docker/docker-compose.yml down
 
-# Stop Agent Town
-echo "Stopping Agent Town..."
-pkill -f "agent-town" 2>/dev/null
-
-echo "✅ All services stopped"
+echo "✅ All services stopped and containers removed."

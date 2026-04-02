@@ -1,19 +1,10 @@
 #!/bin/bash
 
-# Script to set up Agent profiles and Skill definitions
+echo "Setting up initial agent configurations..."
 
-echo "Setting up Agent profiles and Skill definitions..."
+# This script is a placeholder. In a real scenario, it would:
+# 1. Create initial agent configuration files (e.g., in config/agents/)
+# 2. Define persistent agents and their roles
+# 3. Potentially register skills or tools for agents
 
-# Ensure the config directories exist
-mkdir -p ../config/agents
-mkdir -p ../config/skills
-
-# Run the Python script to generate configurations
-python3 ./generate_configs.py
-
-if [ $? -eq 0 ]; then
-  echo "Agent profiles and Skill definitions setup complete."
-else
-  echo "Error: Failed to setup Agent profiles and Skill definitions."
-  exit 1
-fi
+echo "Agent setup complete (placeholder)."

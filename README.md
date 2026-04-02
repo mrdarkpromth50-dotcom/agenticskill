@@ -73,8 +73,8 @@
 2.  **ตั้งค่า Environment Variables:**
     คัดลอกไฟล์ `.env.example` เป็น `.env` และแก้ไขค่าตัวแปรต่างๆ ให้ถูกต้อง:
     ```bash
-    cp .env.example .env
-    # แก้ไข .env ด้วยข้อมูลของคุณ (เช่น Discord/Telegram Tokens, LLM API Keys)
+    cp docker/.env.example docker/.env
+    # แก้ไข docker/.env ด้วยข้อมูลของคุณ (เช่น Discord/Telegram Tokens, LLM API Keys)
     ```
 
 3.  **สร้าง Agent Profiles และ Skill Definitions:**
@@ -87,11 +87,65 @@
 4.  **รันระบบด้วย Docker Compose:**
     สร้างและรันบริการทั้งหมดโดยใช้ Docker Compose:
     ```bash
-    docker-compose -f docker/docker-compose.yml up --build -d
+    chmod +x scripts/start-all.sh
+    ./scripts/start-all.sh
     ```
 
-5.  **เข้าถึง UI Town:**
+5.  **ตรวจสอบสถานะ Health Check:**
+    ```bash
+    chmod +x scripts/health-check.sh
+    ./scripts/health-check.sh
+    ```
+
+6.  **เข้าถึง UI Town:**
     เมื่อระบบทำงานแล้ว คุณสามารถเข้าถึง UI Town ได้ที่ `http://localhost:3000`
+
+### Services และ Ports
+
+บริการหลักทั้งหมดจะถูกรันใน Docker และสามารถเข้าถึงได้ผ่านพอร์ตที่กำหนด:
+
+| Service Name               | Port | Description                                     |
+| :------------------------- | :--- | :---------------------------------------------- |
+| `agent-town`               | 3000 | UI สำหรับ Agent Town                             |
+| `memory-system`            | 3001 | บริการจัดการ Short-term และ Long-term Memory     |
+| `persistent-agent-layer`   | 3002 | บริการจัดการ Persistent Agent และ Heartbeat      |
+| `spawn-manager`            | 3003 | บริการจัดการการสร้างและยุติ Spawn-on-Demand Agent |
+| `ceo-agent`                | 3004 | บริการหลักของ CEO Agent                          |
+| `translation-layer`        | 3005 | บริการแปลภาษา                                   |
+| `account-manager`          | 3006 | บริการจัดการ LLM Account Rotation และ Health Check |
+| `antigravity-proxy`        | 8080 | Proxy สำหรับการเข้าถึง LLM                       |
+| `openclaw`                 | 18789| Gateway สำหรับการสื่อสารภายในระบบ                |
+| `redis`                    | 6379 | Redis Cache และ Short-term Memory               |
+| `chromadb`                 | 8000 | Vector Database สำหรับ Long-term Memory          |
+| `ollama`                   | 11434| Local LLM (ถ้ามีการใช้งาน)                      |
+
+### Environment Variables
+
+ไฟล์ `docker/.env.example` มีตัวแปรสภาพแวดล้อมที่จำเป็นทั้งหมด คุณต้องคัดลอกไฟล์นี้เป็น `docker/.env` และแก้ไขค่าให้เหมาะสมกับการตั้งค่าของคุณ:
+
+```bash
+cp docker/.env.example docker/.env
+```
+
+ตัวอย่างตัวแปรที่สำคัญ:
+
+*   **Discord/Telegram Tokens:** สำหรับการสื่อสารของ CEO Agent
+*   **REDIS_URL, VECTOR_DB_URL:** การเชื่อมต่อกับระบบ Memory
+*   **TRANSLATION_API_URL, TRANSLATION_MODEL:** การตั้งค่าสำหรับ Translation Layer
+*   **SPAWN_MAX_CONCURRENT, SPAWN_TASK_TIMEOUT:** การตั้งค่าสำหรับ Spawn Manager
+*   **ACCOUNT_ROTATION_INTERVAL, LLM_ACCOUNT_HEALTH_CHECK_INTERVAL:** การตั้งค่าสำหรับ Account Manager
+*   **MEMORY_SYSTEM_URL, SPAWN_MANAGER_URL, TRANSLATION_LAYER_URL, ACCOUNT_MANAGER_URL:** URL สำหรับการสื่อสารระหว่าง Services
+
+### การตรวจสอบ Health (Health Check)
+
+คุณสามารถตรวจสอบสถานะการทำงานของ Services ทั้งหมดได้โดยรันสคริปต์ `health-check.sh`:
+
+```bash
+chmod +x scripts/health-check.sh
+./scripts/health-check.sh
+```
+
+สคริปต์นี้จะทำการเรียก `GET /health` endpoint ของแต่ละ Service และรายงานสถานะกลับมา
 
 ### เอกสารประกอบ
 
