@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Antigravity Proxy for LLM access
   antigravity-proxy:
     image: node:20-slim
     container_name: antigravity-claude-proxy
@@ -17,6 +18,7 @@ services:
       - agentic-network
     restart: unless-stopped
 
+  # OpenClaw Gateway
   openclaw:
     image: node:24-slim
     container_name: openclaw-gateway
@@ -35,6 +37,7 @@ services:
       - antigravity-proxy
     restart: unless-stopped
 
+  # Agent Town UI
   agent-town:
     image: node:20-slim
     container_name: agent-town-ui
@@ -48,6 +51,161 @@ services:
       - agentic-network
     depends_on:
       - openclaw
+    restart: unless-stopped
+
+  # Redis for Short-term and Shared Memory
+  redis:
+    image: redis:7-alpine
+    container_name: agentic-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  # ChromaDB for Long-term Memory (Vector DB)
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: agentic-chromadb
+    ports:
+      - "8000:8000"
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ALLOW_RESET=TRUE
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  # Discord Bot Service
+  discord-bot:
+    build:
+      context: ../services/discord-bot
+      dockerfile: Dockerfile
+    container_name: agentic-discord-bot
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+    networks:
+      - agentic-network
+    depends_on:
+      - openclaw
+    restart: unless-stopped
+
+  # Telegram Bot Service
+  telegram-bot:
+    build:
+      context: ../services/telegram-bot
+      dockerfile: Dockerfile
+    container_name: agentic-telegram-bot
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    networks:
+      - agentic-network
+    depends_on:
+      - openclaw
+    restart: unless-stopped
+
+  # Persistent Agent Layer Service
+  persistent-agent-layer:
+    build:
+      context: ../services/persistent-agent-layer
+      dockerfile: Dockerfile
+    container_name: agentic-persistent-agent-layer
+    environment:
+      - PERSISTENT_AGENT_HEARTBEAT_INTERVAL=${PERSISTENT_AGENT_HEARTBEAT_INTERVAL}
+      - PERSISTENT_AGENT_AUTO_RESTART=${PERSISTENT_AGENT_AUTO_RESTART}
+    networks:
+      - agentic-network
+    depends_on:
+      - redis
+      - chromadb
+      - openclaw
+    restart: unless-stopped
+
+  # Spawn Manager Service
+  spawn-manager:
+    build:
+      context: ../services/spawn-manager
+      dockerfile: Dockerfile
+    container_name: agentic-spawn-manager
+    environment:
+      - SPAWN_MAX_CONCURRENT=${SPAWN_MAX_CONCURRENT}
+      - SPAWN_TASK_TIMEOUT=${SPAWN_TASK_TIMEOUT}
+    networks:
+      - agentic-network
+    depends_on:
+      - redis
+      - openclaw
+    restart: unless-stopped
+
+  # Memory System Service
+  memory-system:
+    build:
+      context: ../services/memory-system
+      dockerfile: Dockerfile
+    container_name: agentic-memory-system
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - VECTOR_DB_URL=http://chromadb:8000
+      - VECTOR_DB_TYPE=chromadb
+    networks:
+      - agentic-network
+    depends_on:
+      - redis
+      - chromadb
+    restart: unless-stopped
+
+  # CEO Agent Service
+  ceo-agent:
+    build:
+      context: ../services/ceo-agent
+      dockerfile: Dockerfile
+    container_name: agentic-ceo-agent
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      # Add other necessary environment variables for CEO Agent
+    networks:
+      - agentic-network
+    depends_on:
+      - persistent-agent-layer
+      - spawn-manager
+      - memory-system
+      - translation-layer
+      - discord-bot
+      - telegram-bot
+    restart: unless-stopped
+
+  # Translation Layer Service
+  translation-layer:
+    build:
+      context: ../services/translation-layer
+      dockerfile: Dockerfile
+    container_name: agentic-translation-layer
+    environment:
+      - TRANSLATION_MODE=${TRANSLATION_MODE}
+      - TRANSLATION_MODEL=${TRANSLATION_MODEL}
+      # Add API keys for translation services if mode is 'api'
+    networks:
+      - agentic-network
+    restart: unless-stopped
+
+  # LLM Account Manager Service
+  account-manager:
+    build:
+      context: ../services/account-manager
+      dockerfile: Dockerfile
+    container_name: agentic-account-manager
+    environment:
+      - LLM_ACCOUNTS=${LLM_ACCOUNTS}
+      - ACCOUNT_ROTATION_INTERVAL=${ACCOUNT_ROTATION_INTERVAL}
+      - LLM_ACCOUNT_HEALTH_CHECK_INTERVAL=${LLM_ACCOUNT_HEALTH_CHECK_INTERVAL}
+      # Add any other environment variables needed for account management
+    networks:
+      - agentic-network
     restart: unless-stopped
 
 volumes:

@@ -12,7 +12,7 @@
 
 บริษัท Agentic จะจำลองโครงสร้างองค์กรจริง โดยมี AI Agent ทำหน้าที่เป็นพนักงานในตำแหน่งต่างๆ และมี CEO เป็นศูนย์กลางในการบริหารจัดการ Agent ทั้งหมดจะถูกแบ่งเป็น 2 ประเภทหลัก:
 
-*   **Persistent Swarm Workers:** Agent หลักที่รันอยู่ตลอดเวลา 24/7 มี Memory ของตัวเอง และทำหน้าที่บริหารจัดการ, ตัดสินใจ, และเฝ้าระวังระบบ เช่น CEO, CTO, CMO, CSO, Accountant, DevOps Engineer
+*   **Persistent Swarm Workers:** Agent หลักที่รันอยู่ตลอดเวลา 24/7 มี Memory ของตัวเอง และทำหน้าที่บริหารจัดการ, ตัดสินใจ, และเฝ้าระวังระบบ เช่น CEO, CTO, CMO, Accountant, DevOps Engineer
 *   **Spawn-on-Demand Workers:** Agent ที่ถูกสร้างขึ้นมาเฉพาะกิจตาม Task และจะถูกทำลายเมื่อทำงานเสร็จสิ้น เพื่อประหยัดทรัพยากรและเพิ่มความยืดหยุ่น เช่น Frontend Developer, Backend Developer, Debugger, Software Tester, Designer, Copywriter, Researcher, Analyst, Hacker, RedTeam, Strategist
 
 **CEO Agent** จะเป็นตัวกลางในการสื่อสารทั้งหมดระหว่างบอสและ Agent อื่นๆ โดยมีหน้าที่หลักในการรับคำสั่ง, วางแผน, มอบหมายงาน, ติดตามความคืบหน้า, และรายงานผลให้บอสทราบเท่านั้น Agent อื่นๆ จะไม่สามารถติดต่อบอสได้โดยตรง
@@ -29,6 +29,7 @@
 *   **Spawn Manager:** ระบบจัดการการสร้างและยุติ Spawn-on-Demand Workers ตาม Task
 *   **Memory System:** ประกอบด้วย Short-term Memory (Redis), Long-term Memory (Vector DB/PostgreSQL), และ Shared Memory (Redis/Message Queue) เพื่อให้ Agent มีความจำและบริบทที่ต่อเนื่อง
 *   **Language Translation Layer:** ระบบแปลภาษาอัตโนมัติ (ไทย <-> อังกฤษ) สำหรับการสื่อสารกับ LLM Provider และบอส
+*   **LLM Account Manager:** บริการจัดการบัญชี LLM หลายบัญชี, Account Rotation, และ Health Check
 
 ### 4. Flow การทำงานหลัก (สรุป)
 
@@ -59,6 +60,39 @@
 
 มีการวางแผนทดสอบการสลับ Account จริงโดยใช้ Gmail ที่เชื่อมต่อไว้ เพื่อตรวจสอบการ Login, Account Switching, การจัดการ Rate Limiting และ Error Handling
 
+### Quick Start (เริ่มต้นใช้งาน)
+
+เพื่อเริ่มต้นระบบ Agentic Company บนเครื่อง Local ของคุณ:
+
+1.  **Clone Repository:**
+    ```bash
+    git clone https://github.com/mrdarkpromth50-dotcom/agenticskill.git
+    cd agenticskill
+    ```
+
+2.  **ตั้งค่า Environment Variables:**
+    คัดลอกไฟล์ `.env.example` เป็น `.env` และแก้ไขค่าตัวแปรต่างๆ ให้ถูกต้อง:
+    ```bash
+    cp .env.example .env
+    # แก้ไข .env ด้วยข้อมูลของคุณ (เช่น Discord/Telegram Tokens, LLM API Keys)
+    ```
+
+3.  **สร้าง Agent Profiles และ Skill Definitions:**
+    รันสคริปต์เพื่อสร้างไฟล์คอนฟิกูเรชัน Agent และ Skill:
+    ```bash
+    chmod +x scripts/setup-agents.sh
+    ./scripts/setup-agents.sh
+    ```
+
+4.  **รันระบบด้วย Docker Compose:**
+    สร้างและรันบริการทั้งหมดโดยใช้ Docker Compose:
+    ```bash
+    docker-compose -f docker/docker-compose.yml up --build -d
+    ```
+
+5.  **เข้าถึง UI Town:**
+    เมื่อระบบทำงานแล้ว คุณสามารถเข้าถึง UI Town ได้ที่ `http://localhost:3000`
+
 ### เอกสารประกอบ
 
 รายละเอียดเพิ่มเติมสามารถดูได้จากเอกสารในโฟลเดอร์ `docs/`:
@@ -69,3 +103,4 @@
 *   `docs/AGENT_ROLES.md`: โครงสร้างบริษัทและบทบาทของ Agent แต่ละตำแหน่ง
 *   `docs/DISCORD_SETUP.md`: การตั้งค่า Discord Server สำหรับ Agentic Company
 *   `docs/DEVELOPMENT_ROADMAP.md`: แผนงานการพัฒนาโดยละเอียด
+*   `TESTING_PLAN.md`: แผนการทดสอบระบบทั้งหมด

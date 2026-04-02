@@ -1,6 +1,3 @@
-# OpenClaw Configuration Template
-# This file is used by OpenClaw to configure models and providers
-
 {
   "models": {
     "mode": "merge",
@@ -11,21 +8,15 @@
         "api": "anthropic-messages",
         "models": [
           {
-            "id": "gemini-3-flash",
-            "name": "Gemini 3 Flash",
+            "id": "gemini-3-pro-high",
+            "name": "Gemini 3 Pro High",
             "reasoning": true,
             "contextWindow": 1048576
           },
           {
-            "id": "claude-sonnet-4-6-thinking",
-            "name": "Claude Sonnet 4.6 Thinking",
+            "id": "opus-4-6-think",
+            "name": "Opus 4.6 Think",
             "reasoning": true,
-            "contextWindow": 200000
-          },
-          {
-            "id": "claude-3-5-sonnet-20241022",
-            "name": "Claude 3.5 Sonnet",
-            "reasoning": false,
             "contextWindow": 200000
           }
         ]
@@ -38,11 +29,11 @@
       "botToken": "xoxb-YOUR-BOT-TOKEN"
     },
     "discord": {
-      "enabled": false,
+      "enabled": true,
       "token": "YOUR-DISCORD-TOKEN"
     },
     "telegram": {
-      "enabled": false,
+      "enabled": true,
       "token": "YOUR-TELEGRAM-BOT-TOKEN"
     }
   }

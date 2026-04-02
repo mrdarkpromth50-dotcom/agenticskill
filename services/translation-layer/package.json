@@ -1,0 +1,16 @@
+{
+  "name": "translation-layer",
+  "version": "1.0.0",
+  "description": "Service for handling language translation between Thai and English using LLMs or dedicated APIs.",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "keywords": [],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

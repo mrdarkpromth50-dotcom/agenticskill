@@ -33,5 +33,9 @@
   "devDependencies": {
     "antigravity-claude-proxy": "latest",
     "openclaw": "latest"
+  },
+  "dependencies": {
+    "chromadb": "^3.4.0",
+    "redis": "^5.11.0"
   }
 }
