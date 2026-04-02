@@ -2,16 +2,24 @@
   "name": "ceo-agent",
   "version": "1.0.0",
   "description": "The core CEO Agent service, managing tasks, communication with Boss, and agent orchestration.",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js"
   },
   "keywords": [],
   "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.7.2",
     "discord.js": "^14.15.3",
-    "telegraf": "^4.16.1",
+    "express": "^4.19.2",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }

@@ -1,27 +1,17 @@
-export interface CEOAgentConfig {
-  id: string;
-  name: string;
-  role: string;
-  type: 'persistent' | 'spawn';
-  personality: string;
-  communication_style: string;
-  skills: string[];
-  tools: string[];
-  system_prompt: string;
-}
-
 export interface BossCommand {
   text: string;
   sender: string;
+  source: 'telegram' | 'discord' | 'api';
 }
 
 export interface SubTask {
   id: string;
   description: string;
-  assignedAgentType: string; // e.g., 'frontend-dev', 'debugger', 'ceo'
+  assignedAgentType: string;
   status: 'pending' | 'in-progress' | 'completed' | 'failed';
-  result?: string;
+  result?: any;
   error?: string;
+  spawnTaskId?: string; // ID from Spawn Manager
 }
 
 export interface TaskPlan {
@@ -31,8 +21,13 @@ export interface TaskPlan {
   subTasks: SubTask[];
   status: 'planning' | 'in-progress' | 'completed' | 'failed';
   createdAt: number;
-  startedAt?: number;
   completedAt?: number;
+}
+
+export interface CEOStatus {
+  status: 'idle' | 'busy' | 'error';
+  activePlans: number;
+  lastCommand?: string;
 }
 
 export interface AgentReport {
@@ -42,11 +37,4 @@ export interface AgentReport {
   status: 'in-progress' | 'completed' | 'failed';
   message: string;
   details?: any;
-}
-
-export interface TrendProposal {
-  title: string;
-  description: string;
-  potentialImpact: string;
-  recommendation: string;
 }
