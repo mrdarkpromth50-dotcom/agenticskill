@@ -1,19 +1,29 @@
 version: '3.8'
 
 services:
-  # Antigravity Proxy for LLM access
+  # Antigravity Proxy for LLM access (BCProxyAI)
   antigravity-proxy:
-    image: node:20-slim
-    container_name: antigravity-claude-proxy
+    build:
+      context: ../services/antigravity-proxy
+      dockerfile: Dockerfile
+    container_name: agentic-antigravity-proxy
     ports:
       - "8080:8080"
     environment:
       - NODE_ENV=production
-      - HOST=0.0.0.0
       - PORT=8080
-    command: bash -c "npm install -g antigravity-claude-proxy@latest && antigravity-claude-proxy start"
-    volumes:
-      - antigravity-data:/root/.antigravity
+      - LLM_PROVIDERS=${LLM_PROVIDERS}
+      - PRIMARY_PROVIDER=${PRIMARY_PROVIDER}
+      - FALLBACK_PROVIDERS=${FALLBACK_PROVIDERS}
+      - FALLBACK_STRATEGY=${FALLBACK_STRATEGY}
+      - FALLBACK_MAX_RETRIES=${FALLBACK_MAX_RETRIES}
+      - FALLBACK_INITIAL_RETRY_DELAY=${FALLBACK_INITIAL_RETRY_DELAY}
+      - GOOGLE_ACCOUNTS=${GOOGLE_ACCOUNTS}
+      - LOAD_BALANCE_STRATEGY=${LOAD_BALANCE_STRATEGY}
+      - TRANSLATION_LAYER_URL=http://translation-layer:3005
+      - API_KEYS=${API_KEYS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW}
     networks:
       - agentic-network
     restart: unless-stopped
@@ -275,6 +285,7 @@ services:
       - TRANSLATION_LAYER_URL=http://translation-layer:3005
       - ACCOUNT_MANAGER_URL=http://account-manager:3006
       - SPAWN_AGENTS_URL=http://spawn-agents:3007
+      - ANTIGRAVITY_PROXY_URL=http://antigravity-proxy:8080
     networks:
       - agentic-network
     depends_on:
@@ -285,6 +296,7 @@ services:
       - translation-layer
       - account-manager
       - spawn-agents
+      - antigravity-proxy
     restart: unless-stopped
 
   # Discord Bot Service
@@ -318,7 +330,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  antigravity-data:
   openclaw-data:
   ollama_data:
 

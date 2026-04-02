@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { SpawnAgentConfig, TaskPayload, AgentExecutionResult, AgentProgress } from './types';
 
@@ -21,20 +21,44 @@ export abstract class BaseSpawnAgent {
 
   public abstract executeTask(): Promise<AgentExecutionResult>;
 
-  protected async useLLM(prompt: string, model?: string): Promise<string> {
+  protected async useLLM(prompt: string, model?: string, maxTokens?: number, temperature?: number, stream?: boolean, translateToEnglish?: boolean): Promise<string> {
     console.log(`[${this.config.name} Agent ${this.id}] Calling LLM via Antigravity Proxy...`);
-    try {
-      const response = await axios.post(`${ANTIGRAVITY_PROXY_URL}/generate`, {
-        prompt: prompt,
-        model: model || 'default',
-        max_tokens: 2000,
-        temperature: 0.7,
-      });
-      return response.data.choices[0].text.trim();
-    } catch (error) {
-      console.error(`[${this.config.name} Agent ${this.id}] Error calling LLM:`, error);
-      throw new Error(`Failed to get response from LLM: ${error.message}`);
+    const maxRetries = 3;
+    const initialRetryDelay = 1000; // 1 second
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await axios.post(`${ANTIGRAVITY_PROXY_URL}/generate`, {
+          prompt: prompt,
+          model: model || 'default',
+          maxTokens: maxTokens || 2000,
+          temperature: temperature || 0.7,
+          stream: stream || false,
+          translateToEnglish: translateToEnglish || false,
+        });
+        return response.data.text.trim();
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        console.error(`[${this.config.name} Agent ${this.id}] Error calling LLM (Attempt ${attempt + 1}/${maxRetries}):`, axiosError.message);
+
+        if (axiosError.response) {
+          console.error(`Status: ${axiosError.response.status}, Data: ${JSON.stringify(axiosError.response.data)}`);
+          // If it's a client error (4xx) other than 429, or a non-retryable server error, rethrow immediately
+          if (axiosError.response.status >= 400 && axiosError.response.status < 500 && axiosError.response.status !== 429) {
+            throw new Error(`LLM Proxy returned client error: ${axiosError.response.status} - ${axiosError.response.data.error || axiosError.message}`);
+          }
+        }
+
+        if (attempt < maxRetries - 1) {
+          const delay = initialRetryDelay * Math.pow(2, attempt);
+          console.log(`Retrying LLM call in ${delay / 1000} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          throw new Error(`Failed to get response from LLM after ${maxRetries} attempts: ${axiosError.message}`);
+        }
+      }
     }
+    throw new Error('Unexpected error in useLLM retry loop.'); // Should not be reached
   }
 
   protected async reportProgress(progress: AgentProgress): Promise<void> {
