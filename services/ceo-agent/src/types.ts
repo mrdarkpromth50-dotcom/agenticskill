@@ -57,3 +57,38 @@ export interface AgentReport {
   message: string;
   details?: any;
 }
+
+// New interfaces for Trend Research, Daily Report, and Proactive Scheduler
+export interface TrendItem {
+  title: string;
+  summary: string;
+  implications: string;
+}
+
+export interface Proposal {
+  id: string;
+  title: string;
+  summary: string;
+  impact: 'low' | 'medium' | 'high';
+  actionItems: string[];
+  estimatedCost: 'low' | 'medium' | 'high' | string;
+  estimatedTime: 'short-term' | 'medium-term' | 'long-term' | string;
+  createdAt: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'implemented';
+}
+
+export interface DailyReport {
+  title: string;
+  date: string;
+  summary: string;
+  agentActivitiesSummary: string;
+  taskStatusSummary: string;
+  financialAlerts: string;
+  keyAchievements: string;
+}
+
+export interface ProactiveConfig {
+  trendResearchInterval: number; // in milliseconds
+  dailyReportCronTime: string; // cron string
+  idleCheckInterval: number; // in milliseconds
+}

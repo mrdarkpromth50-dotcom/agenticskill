@@ -1,32 +1,70 @@
-import { BossCommand, TaskPlan, SubTask, CEOStatus, Task, ExecutionPlan } from './types';
+import { BossCommand, Task, ExecutionPlan, TrendItem, Proposal, DailyReport } from './types';
 import { CommunicationService } from './communication';
 import { TaskPlanner } from './task-planner';
 import { ProgressTracker } from './progress-tracker';
+import { TrendResearchEngine } from './trend-research';
+import { DailyReportGenerator } from './daily-report';
+import { ProactiveScheduler } from './proactive-scheduler';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 const SPAWN_MANAGER_URL = process.env.SPAWN_MANAGER_URL || 'http://spawn-manager:3003';
+const ANTIGRAVITY_PROXY_URL = process.env.ANTIGRAVITY_PROXY_URL || 'http://antigravity-proxy:8080';
 
 export class CEOAgent {
   private communication: CommunicationService;
   private taskPlanner: TaskPlanner;
   private progressTracker: ProgressTracker;
-  private activePlans: Map<string, ExecutionPlan> = new Map(); // Changed to ExecutionPlan
+  private trendResearchEngine: TrendResearchEngine;
+  private dailyReportGenerator: DailyReportGenerator;
+  private proactiveScheduler: ProactiveScheduler;
+  private activePlans: Map<string, ExecutionPlan> = new Map();
   private status: 'idle' | 'busy' | 'error' = 'idle';
   private lastCommand?: string;
+  private latestTrends: TrendItem[] = [];
+  private latestDailyReport?: DailyReport;
 
   constructor() {
     this.communication = new CommunicationService();
     this.taskPlanner = new TaskPlanner();
     this.progressTracker = new ProgressTracker();
+
+    // LLM call function for TrendResearchEngine and DailyReportGenerator
+    const llmCall = async (prompt: string, model?: string): Promise<string> => {
+      try {
+        const response = await axios.post(`${ANTIGRAVITY_PROXY_URL}/generate`, {
+          prompt,
+          model: model || 'default',
+        });
+        return response.data.text;
+      } catch (error) {
+        console.error('Error calling LLM via Antigravity Proxy:', error);
+        throw error;
+      }
+    };
+
+    this.trendResearchEngine = new TrendResearchEngine(llmCall);
+    this.dailyReportGenerator = new DailyReportGenerator(llmCall);
+    this.proactiveScheduler = new ProactiveScheduler(
+      this.trendResearchEngine,
+      this.dailyReportGenerator,
+      llmCall
+    );
   }
 
   async start(): Promise<void> {
     console.log("CEO Agent: Starting logic and listening for commands...");
     this.communication.listenForCommands((command) => this.receiveCommand(command));
     
-    // Start proactive research interval
-    setInterval(() => this.proactiveResearch(), 3600000); // Every hour
+    // Start proactive loops
+    const trendResearchInterval = parseInt(process.env.TREND_RESEARCH_INTERVAL || '21600000'); // Default 6 hours
+    this.proactiveScheduler.startTrendResearchLoop(trendResearchInterval);
+
+    const dailyReportCron = process.env.DAILY_REPORT_CRON || '0 18 * * *'; // Default 6 PM daily
+    this.proactiveScheduler.startDailyReportLoop(dailyReportCron);
+
+    const idleCheckInterval = parseInt(process.env.IDLE_CHECK_INTERVAL || '1800000'); // Default 30 minutes
+    this.proactiveScheduler.startIdleCheckLoop(idleCheckInterval, this.handleTrendProposal.bind(this));
   }
 
   async receiveCommand(command: BossCommand): Promise<void> {
@@ -42,7 +80,7 @@ export class CEOAgent {
       const executionPlan = this.taskPlanner.createExecutionPlan(analysis);
       const { totalTime, totalCost } = this.taskPlanner.estimateResources(executionPlan);
 
-      executionPlan.id = uuidv4(); // Assign a unique ID to the execution plan
+      executionPlan.id = uuidv4();
       executionPlan.bossCommand = command.text;
       executionPlan.overallGoal = `Process command: ${command.text}`;
       executionPlan.status = 'planning';
@@ -55,10 +93,8 @@ export class CEOAgent {
         `กำลังเริ่มดำเนินการครับ...`
       );
       
-      // Track all tasks in the progress tracker
       executionPlan.tasks.forEach(task => this.progressTracker.trackTask(task));
 
-      // Delegate tasks based on dependencies
       await this.delegateTasksSequentially(executionPlan.id);
 
     } catch (error) {
@@ -84,7 +120,6 @@ export class CEOAgent {
       await this.delegateTask(planId, task);
     }
 
-    // Check if all tasks are finished after delegation
     await this.checkPlanCompletion(planId);
   }
 
@@ -100,12 +135,10 @@ export class CEOAgent {
       task.spawnTaskId = response.data.id;
       this.progressTracker.updateProgress(task.id, 'in-progress');
       
-      // Start tracking progress for this specific task
       this.trackSpawnedTaskProgress(planId, task.id);
     } catch (error) {
       console.error(`CEO Agent: Failed to delegate task ${task.id}:`, error);
       this.progressTracker.updateProgress(task.id, 'failed', { error: 'Failed to connect to Spawn Manager' });
-      // Attempt to continue with other tasks or report failure
       await this.checkPlanCompletion(planId);
     }
   }
@@ -123,16 +156,15 @@ export class CEOAgent {
           clearInterval(checkInterval);
           this.progressTracker.updateProgress(taskId, 'completed', taskData.result);
           console.log(`CEO Agent: Task ${taskId} completed.`);
-          await this.delegateTasksSequentially(planId); // Try to delegate next tasks
+          await this.delegateTasksSequentially(planId);
         } else if (taskData.status === 'failed' || taskData.status === 'cancelled') {
           clearInterval(checkInterval);
           this.progressTracker.updateProgress(taskId, taskData.status, taskData.error);
           console.error(`CEO Agent: Task ${taskId} ${taskData.status}.`);
-          await this.checkPlanCompletion(planId); // Check plan completion on failure
+          await this.checkPlanCompletion(planId);
         }
       } catch (error) {
         console.error(`CEO Agent: Error tracking spawned task ${taskId}:`, error);
-        // If tracking fails, mark task as failed to prevent infinite loop
         clearInterval(checkInterval);
         this.progressTracker.updateProgress(taskId, 'failed', { error: 'Failed to track progress from Spawn Manager' });
         await this.checkPlanCompletion(planId);
@@ -172,9 +204,35 @@ export class CEOAgent {
     return report;
   }
 
-  async proactiveResearch(): Promise<void> {
-    console.log("CEO Agent: Performing proactive research on trends...");
-    // Placeholder for actual research logic
+  // New methods for proactive features
+  public async handleTrendProposal(proposal: Proposal): Promise<void> {
+    console.log(`CEO Agent: Boss approved proposal: ${proposal.title}. Creating tasks...`);
+    // Here, the CEO Agent would convert the proposal's actionItems into actual tasks
+    // and then delegate them via receiveCommand or directly to delegateTask.
+    // For simplicity, let's just log for now.
+    await this.communication.reportToBoss(`บอสครับ! ได้รับการอนุมัติข้อเสนอ: ${proposal.title} แล้วครับ กำลังดำเนินการสร้างงาน...`);
+    // Example: Create a simple task from the proposal
+    const taskDescription = `Implement key action items from proposal: ${proposal.title}. Summary: ${proposal.summary}. Action items: ${proposal.actionItems.join(', ')}`;
+    const command: BossCommand = { text: taskDescription, sender: 'CEO_PROACTIVE', source: 'api' };
+    await this.receiveCommand(command); // Re-use existing command processing logic
+  }
+
+  public async triggerTrendResearch(): Promise<TrendItem[]> {
+    this.latestTrends = await this.trendResearchEngine.searchTrends();
+    return this.latestTrends;
+  }
+
+  public getLatestTrends(): TrendItem[] {
+    return this.latestTrends;
+  }
+
+  public async triggerDailyReport(): Promise<DailyReport> {
+    this.latestDailyReport = await this.dailyReportGenerator.generateReport();
+    return this.latestDailyReport;
+  }
+
+  public getLatestReport(): DailyReport | undefined {
+    return this.latestDailyReport;
   }
 
   getStatus(): CEOStatus {
