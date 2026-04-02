@@ -24,7 +24,20 @@ export interface AgentProgress {
   message: string;
 }
 
-export type AgentType = 'developer' | 'researcher' | 'designer' | 'copywriter';
+export type AgentType = 
+  | 'developer'
+  | 'researcher'
+  | 'designer'
+  | 'copywriter'
+  | 'frontend-developer'
+  | 'backend-developer'
+  | 'debugger'
+  | 'software-tester'
+  | 'dev-lead'
+  | 'analyst'
+  | 'hacker'
+  | 'redteam'
+  | 'strategist';
 
 export interface AgentFactory {
   [key: string]: any; // Map agentType to constructor

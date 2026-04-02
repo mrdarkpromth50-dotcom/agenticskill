@@ -5,7 +5,16 @@ import { DeveloperAgent } from './developer-agent';
 import { ResearcherAgent } from './researcher-agent';
 import { DesignerAgent } from './designer-agent';
 import { CopywriterAgent } from './copywriter-agent';
-import { SpawnAgentConfig, TaskPayload, AgentFactory } from './types';
+import { FrontendDeveloperAgent } from './frontend-developer-agent';
+import { BackendDeveloperAgent } from './backend-developer-agent';
+import { DebuggerAgent } from './debugger-agent';
+import { SoftwareTesterAgent } from './software-tester-agent';
+import { DevLeadAgent } from './dev-lead-agent';
+import { AnalystAgent } from './analyst-agent';
+import { HackerAgent } from './hacker-agent';
+import { RedTeamAgent } from './redteam-agent';
+import { StrategistAgent } from './strategist-agent';
+import { SpawnAgentConfig, TaskPayload, AgentFactory, AgentType } from './types';
 
 // Import shared security and resilience modules
 import { requestLogger, createRateLimiter, validateApiKey, globalErrorHandler } from '@agenticskill/security';
@@ -29,6 +38,15 @@ const agentFactory: AgentFactory = {
   'researcher': ResearcherAgent,
   'designer': DesignerAgent,
   'copywriter': CopywriterAgent,
+  'frontend-developer': FrontendDeveloperAgent,
+  'backend-developer': BackendDeveloperAgent,
+  'debugger': DebuggerAgent,
+  'software-tester': SoftwareTesterAgent,
+  'dev-lead': DevLeadAgent,
+  'analyst': AnalystAgent,
+  'hacker': HackerAgent,
+  'redteam': RedTeamAgent,
+  'strategist': StrategistAgent,
 };
 
 // --- API ENDPOINTS ---
@@ -38,9 +56,15 @@ app.get('/health', (req, res) => {
   res.status(200).send({ status: 'ok', service: 'spawn-agents' });
 });
 
+// Endpoint to list all available agent types
+app.get('/agents/types', (req, res) => {
+  const agentTypes = Object.keys(agentFactory) as AgentType[];
+  res.status(200).send({ agentTypes });
+});
+
 // Endpoint to spawn and execute an agent
 app.post('/spawn', async (req, res, next) => {
-  const { agentType, taskId, taskPayload, agentConfig }: { agentType: string; taskId: string; taskPayload: TaskPayload; agentConfig: SpawnAgentConfig } = req.body;
+  const { agentType, taskId, taskPayload, agentConfig }: { agentType: AgentType; taskId: string; taskPayload: TaskPayload; agentConfig: SpawnAgentConfig } = req.body;
 
   if (!agentType || !taskId || !taskPayload || !agentConfig) {
     return res.status(400).send({ error: 'Missing required fields: agentType, taskId, taskPayload, agentConfig' });
