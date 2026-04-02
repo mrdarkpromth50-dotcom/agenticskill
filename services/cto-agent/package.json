@@ -1,0 +1,28 @@
+{
+  "name": "cto-agent",
+  "version": "1.0.0",
+  "description": "CTO Agent service for monitoring system health, analyzing errors, and orchestrating debugging.",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "axios": "^1.7.2",
+    "uuid": "^9.0.1",
+    "@agenticskill/security": "^1.0.0",
+    "@agenticskill/resilience": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/uuid": "^9.0.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

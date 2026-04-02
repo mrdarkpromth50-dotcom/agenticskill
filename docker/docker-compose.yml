@@ -265,6 +265,113 @@ services:
       - openclaw
     restart: unless-stopped
 
+  # Accountant Agent Service
+  accountant-agent:
+    build:
+      context: ../services/accountant-agent
+      dockerfile: Dockerfile
+    container_name: agentic-accountant-agent
+    ports:
+      - "3009:3009"
+    environment:
+      - BANK_API_URL=${BANK_API_URL}
+      - PAYMENT_GATEWAY_URL=${PAYMENT_GATEWAY_URL}
+      - FINANCE_DISCORD_WEBHOOK=${FINANCE_DISCORD_WEBHOOK}
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - PORT=3009
+      - API_KEYS=${API_KEYS}
+    networks:
+      - agentic-network
+    depends_on:
+      - memory-system
+    restart: unless-stopped
+
+  # CTO Agent Service
+  cto-agent:
+    build:
+      context: ../services/cto-agent
+      dockerfile: Dockerfile
+    container_name: agentic-cto-agent
+    ports:
+      - "3010:3010"
+    environment:
+      - SYSTEM_LOG_PATH=${SYSTEM_LOG_PATH}
+      - ERROR_THRESHOLD=${ERROR_THRESHOLD}
+      - SPAWN_MANAGER_URL=http://spawn-manager:3003
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - PORT=3010
+      - API_KEYS=${API_KEYS}
+    networks:
+      - agentic-network
+    depends_on:
+      - spawn-manager
+      - memory-system
+    restart: unless-stopped
+
+  # CMO Agent Service
+  cmo-agent:
+    build:
+      context: ../services/cmo-agent
+      dockerfile: Dockerfile
+    container_name: agentic-cmo-agent
+    ports:
+      - "3011:3011"
+    environment:
+      - MARKETING_BUDGET=${MARKETING_BUDGET}
+      - CAMPAIGN_APPROVAL_REQUIRED=${CAMPAIGN_APPROVAL_REQUIRED}
+      - SPAWN_MANAGER_URL=http://spawn-manager:3003
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - ANTIGRAVITY_PROXY_URL=http://antigravity-proxy:8080
+      - PORT=3011
+      - API_KEYS=${API_KEYS}
+    networks:
+      - agentic-network
+    depends_on:
+      - spawn-manager
+      - memory-system
+      - antigravity-proxy
+    restart: unless-stopped
+
+  # CSO Agent Service
+  cso-agent:
+    build:
+      context: ../services/cso-agent
+      dockerfile: Dockerfile
+    container_name: agentic-cso-agent
+    ports:
+      - "3012:3012"
+    environment:
+      - SPAWN_MANAGER_URL=http://spawn-manager:3003
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - ANTIGRAVITY_PROXY_URL=http://antigravity-proxy:8080
+      - PORT=3012
+      - API_KEYS=${API_KEYS}
+    networks:
+      - agentic-network
+    depends_on:
+      - spawn-manager
+      - memory-system
+      - antigravity-proxy
+    restart: unless-stopped
+
+  # DevOps Agent Service
+  devops-agent:
+    build:
+      context: ../services/devops-agent
+      dockerfile: Dockerfile
+    container_name: agentic-devops-agent
+    ports:
+      - "3013:3013"
+    environment:
+      - MEMORY_SYSTEM_URL=http://memory-system:3001
+      - PORT=3013
+      - API_KEYS=${API_KEYS}
+    networks:
+      - agentic-network
+    depends_on:
+      - memory-system
+    restart: unless-stopped
+
   # Monitoring & Alerting Service
   monitoring:
     build:
@@ -286,6 +393,11 @@ services:
       - ACCOUNT_MANAGER_URL=http://account-manager:3006
       - SPAWN_AGENTS_URL=http://spawn-agents:3007
       - ANTIGRAVITY_PROXY_URL=http://antigravity-proxy:8080
+      - ACCOUNTANT_AGENT_URL=http://accountant-agent:3009
+      - CTO_AGENT_URL=http://cto-agent:3010
+      - CMO_AGENT_URL=http://cmo-agent:3011
+      - CSO_AGENT_URL=http://cso-agent:3012
+      - DEVOPS_AGENT_URL=http://devops-agent:3013
     networks:
       - agentic-network
     depends_on:
@@ -297,6 +409,11 @@ services:
       - account-manager
       - spawn-agents
       - antigravity-proxy
+      - accountant-agent
+      - cto-agent
+      - cmo-agent
+      - cso-agent
+      - devops-agent
     restart: unless-stopped
 
   # Discord Bot Service
