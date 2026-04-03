@@ -12,8 +12,8 @@
   "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
-    "@agenticskill/resilience": "^1.0.0",
-    "@agenticskill/security": "^1.0.0",
+    "@agenticskill/resilience": "file:../../shared/resilience",
+    "@agenticskill/security": "file:../../shared/security",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.5",

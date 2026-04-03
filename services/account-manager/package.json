@@ -12,8 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@agenticskill/resilience": "^1.0.0",
-    "@agenticskill/security": "^1.0.0",
+    "@agenticskill/resilience": "file:../../shared/resilience",
+    "@agenticskill/security": "file:../../shared/security",
     "express": "^4.19.2",
     "uuid": "^9.0.1"
   },

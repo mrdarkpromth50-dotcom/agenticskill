@@ -1,0 +1,21 @@
+{
+  "name": "@agenticskill/memory-client",
+  "version": "1.0.0",
+  "description": "Shared Memory Client for AgenticSkill agents - unified interface for Redis and ChromaDB",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}
