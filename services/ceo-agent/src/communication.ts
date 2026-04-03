@@ -1,109 +1,94 @@
-import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
-import { Telegraf } from 'telegraf';
 import { BossCommand } from './types';
+import axios from 'axios';
+import express from 'express';
 
-// A unified communicator to handle multiple platforms
+const DISCORD_BOT_URL = process.env.DISCORD_BOT_URL || 'http://localhost:3014';
+const TELEGRAM_BOT_URL = process.env.TELEGRAM_BOT_URL || 'http://localhost:3015';
+const DISCORD_CHANNEL_CEO = process.env.DISCORD_CHANNEL_CEO_COMMANDS || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+
+/**
+ * CommunicationService now uses HTTP APIs of the Discord Bot and Telegram Bot services
+ * instead of creating separate bot instances (which causes token conflicts).
+ */
 export class CommunicationService {
-    private discordComm?: DiscordCommunicator;
-    private telegramComm?: TelegramCommunicator;
+  private commandCallback?: (command: BossCommand) => void;
 
-    constructor() {
-        const discordToken = process.env.DISCORD_BOT_TOKEN;
-        const discordGuildId = process.env.DISCORD_GUILD_ID;
-        const discordChannelId = process.env.DISCORD_CHANNEL_ID;
+  constructor() {
+    console.log('[CommunicationService] Initialized with HTTP-based communication');
+    console.log(`[CommunicationService] Discord Bot URL: ${DISCORD_BOT_URL}`);
+    console.log(`[CommunicationService] Telegram Bot URL: ${TELEGRAM_BOT_URL}`);
+  }
 
-        const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-        const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+  /**
+   * Listen for commands via the /command endpoint on the CEO Agent's Express app.
+   * The Discord Bot and Telegram Bot forward commands to this endpoint.
+   */
+  listenForCommands(callback: (command: BossCommand) => void): void {
+    this.commandCallback = callback;
+    console.log('[CommunicationService] Ready to receive commands via /command endpoint');
+  }
 
-        if (discordToken && discordGuildId && discordChannelId) {
-            this.discordComm = new DiscordCommunicator(discordToken, discordGuildId, discordChannelId);
-            console.log("Discord communicator initialized.");
-        } else {
-            console.warn("Discord environment variables not set. Discord communicator disabled.");
-        }
+  /**
+   * Report to boss via Discord and Telegram bot HTTP APIs
+   */
+  async reportToBoss(report: string): Promise<void> {
+    console.log('[CommunicationService] Reporting to boss...');
 
-        if (telegramToken && telegramChatId) {
-            this.telegramComm = new TelegramCommunicator(telegramToken, telegramChatId);
-            console.log("Telegram communicator initialized.");
-        } else {
-            console.warn("Telegram environment variables not set. Telegram communicator disabled.");
-        }
+    // Send via Discord Bot HTTP API
+    if (DISCORD_CHANNEL_CEO) {
+      try {
+        await axios.post(`${DISCORD_BOT_URL}/send`, {
+          channelId: DISCORD_CHANNEL_CEO,
+          message: report.substring(0, 2000), // Discord message limit
+        }, { timeout: 5000 });
+        console.log('[CommunicationService] Sent report to Discord');
+      } catch (error: any) {
+        console.error('[CommunicationService] Failed to send to Discord:', error.message);
+      }
     }
 
-    listenForCommands(callback: (command: BossCommand) => void) {
-        this.discordComm?.listenForCommands(callback);
-        this.telegramComm?.listenForCommands(callback);
-        console.log("Started listening for commands on all available platforms.");
+    // Send via Telegram Bot HTTP API
+    if (TELEGRAM_CHAT_ID) {
+      try {
+        await axios.post(`${TELEGRAM_BOT_URL}/send`, {
+          chatId: TELEGRAM_CHAT_ID,
+          message: report.substring(0, 4096), // Telegram message limit
+        }, { timeout: 5000 });
+        console.log('[CommunicationService] Sent report to Telegram');
+      } catch (error: any) {
+        console.error('[CommunicationService] Failed to send to Telegram:', error.message);
+      }
     }
+  }
 
-    async reportToBoss(report: string) {
-        console.log("Reporting to boss...");
-        // Send to all configured platforms
-        await this.discordComm?.sendMessage(report);
-        await this.telegramComm?.sendMessage(report);
+  /**
+   * Send an embed to Discord
+   */
+  async sendEmbedToDiscord(channelId: string, embed: {
+    title: string;
+    description?: string;
+    color?: number;
+    fields?: Array<{ name: string; value: string; inline?: boolean }>;
+  }): Promise<void> {
+    try {
+      await axios.post(`${DISCORD_BOT_URL}/send`, {
+        channelId,
+        embed,
+      }, { timeout: 5000 });
+    } catch (error: any) {
+      console.error('[CommunicationService] Failed to send embed:', error.message);
     }
-}
+  }
 
-
-class DiscordCommunicator {
-    private client: Client;
-    private guildId: string;
-    private channelId: string;
-
-    constructor(token: string, guildId: string, channelId: string) {
-        this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-        this.guildId = guildId;
-        this.channelId = channelId;
-
-        this.client.login(token).catch(err => console.error("Discord Login Error:", err));
-        this.client.on('ready', () => console.log(`Discord: Logged in as ${this.client.user?.tag}!`));
+  /**
+   * Send system log to Discord
+   */
+  async sendSystemLog(message: string): Promise<void> {
+    try {
+      await axios.post(`${DISCORD_BOT_URL}/log`, { message }, { timeout: 5000 });
+    } catch (error: any) {
+      console.error('[CommunicationService] Failed to send system log:', error.message);
     }
-
-    async sendMessage(message: string): Promise<void> {
-        try {
-            const channel = await this.client.channels.fetch(this.channelId) as TextChannel;
-            if (channel) {
-                await channel.send(message);
-            }
-        } catch (error) {
-            console.error("Discord: Failed to send message:", error);
-        }
-    }
-
-    listenForCommands(callback: (command: BossCommand) => void): void {
-        this.client.on('messageCreate', msg => {
-            if (msg.author.bot || msg.channel.id !== this.channelId) return;
-            console.log(`Discord: Received command from ${msg.author.username}`);
-            callback({ text: msg.content, sender: msg.author.username, source: 'discord' });
-        });
-    }
-}
-
-class TelegramCommunicator {
-    private bot: Telegraf;
-    private chatId: string;
-
-    constructor(token: string, chatId: string) {
-        this.bot = new Telegraf(token);
-        this.chatId = chatId;
-        this.bot.launch().catch(err => console.error("Telegram Launch Error:", err));
-        console.log("Telegram: Bot launched.");
-    }
-
-    async sendMessage(message: string): Promise<void> {
-        try {
-            await this.bot.telegram.sendMessage(this.chatId, message);
-        } catch (error) {
-            console.error("Telegram: Failed to send message:", error);
-        }
-    }
-
-    listenForCommands(callback: (command: BossCommand) => void): void {
-        this.bot.on('text', ctx => {
-            if (ctx.chat.id.toString() === this.chatId) {
-                console.log(`Telegram: Received command from ${ctx.from?.username}`);
-                callback({ text: ctx.message.text, sender: ctx.from?.username || 'Boss', source: 'telegram' });
-            }
-        });
-    }
+  }
 }
